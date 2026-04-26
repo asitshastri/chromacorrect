@@ -1,0 +1,8 @@
+fastapi==0.95.2
+uvicorn==0.29.0
+python-multipart==0.0.9
+pydantic==1.10.21
+onnxruntime==1.18.0
+numpy==1.26.4
+Pillow==10.3.0
+fpdf2==2.7.9

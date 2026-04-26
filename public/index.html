@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChromaCorrect — Colour Calibration</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --card:     #1a1d26;
+      --border:   #2e3140;
+      --accent:   #f0c040;
+      --green:    #4caf7d;
+      --red:      #e05555;
+      --text:     #e8e8f0;
+      --muted:    #8890a8;
+      --radius:   10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #141822 0%, #1e2235 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo { font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+    header .sub  { color: var(--muted); font-size: 13px; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Upload area ── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 16px;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent);
+      background: #1e2235;
+    }
+    .drop-zone.filled { border-color: var(--green); }
+    .drop-zone .icon  { font-size: 32px; margin-bottom: 8px; }
+    .drop-zone .label { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .drop-zone .fname { color: var(--green); font-size: 12px; margin-top: 4px; word-break: break-all; }
+    .drop-zone input  { display: none; }
+
+    /* ── Card marking section ── */
+    #card-section {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    #card-section.visible { display: block; }
+
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-header h3 { font-size: 14px; font-weight: 600; }
+    .card-header .hint { font-size: 12px; color: var(--muted); }
+
+    .corner-steps {
+      display: flex;
+      gap: 6px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .step-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      transition: all .2s;
+    }
+    .step-badge.active  { border-color: var(--accent); color: var(--accent); }
+    .step-badge.done    { border-color: var(--green);  color: var(--green); }
+    .step-badge .num    { width: 18px; height: 18px; border-radius: 50%; background: var(--border);
+                          display: flex; align-items: center; justify-content: center;
+                          font-weight: 700; font-size: 11px; }
+    .step-badge.active .num { background: var(--accent); color: #111; }
+    .step-badge.done   .num { background: var(--green);  color: #111; }
+
+    #card-canvas-wrap {
+      position: relative;
+      padding: 12px 16px;
+      text-align: center;
+      cursor: crosshair;
+    }
+    #card-canvas {
+      max-width: 100%;
+      border-radius: 6px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .card-actions {
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .btn-sm {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .btn-sm:hover { border-color: var(--muted); }
+    .btn-sm.primary { border-color: var(--accent); color: var(--accent); }
+    .btn-sm.primary:hover { background: rgba(240,192,64,.1); }
+    .btn-sm.success { border-color: var(--green); color: var(--green); }
+    .btn-sm:disabled { opacity: .4; cursor: not-allowed; }
+
+    #confirm-status {
+      font-size: 12px;
+      color: var(--green);
+      padding: 10px 16px;
+      display: none;
+    }
+
+    /* ── Advanced options ── */
+    details {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+    .adv-inner { margin-top: 14px; }
+    .adv-row { display: flex; gap: 20px; flex-wrap: wrap; }
+    .adv-row label { font-size: 12px; color: var(--muted); }
+    .adv-row input[type=number] {
+      width: 120px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 6px 10px; margin-top: 4px;
+      display: block;
+    }
+
+    .adv-drop {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .adv-drop:hover { border-color: var(--muted); }
+    .adv-drop.filled { border-color: var(--green); }
+    .adv-drop input  { display: none; }
+    .adv-drop .fname { color: var(--green); font-size: 12px; margin-top: 4px; }
+
+    /* ── Calibrate button ── */
+    #calibrate-btn {
+      width: 100%; padding: 14px; border: none; border-radius: var(--radius);
+      background: var(--accent); color: #111; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity .2s;
+    }
+    #calibrate-btn:disabled { opacity: .45; cursor: not-allowed; }
+    #calibrate-btn:hover:not(:disabled) { opacity: .88; }
+
+    #demo-link {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    #demo-link:hover { color: var(--accent); }
+
+    /* ── Spinner ── */
+    .spinner-wrap { text-align: center; padding: 40px; display: none; }
+    .spinner {
+      display: inline-block; width: 40px; height: 40px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ── */
+    #results { display: none; margin-top: 28px; }
+
+    .metrics-bar {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .metric { flex: 1 1 120px; }
+    .metric .val { font-size: 26px; font-weight: 800; }
+    .metric .val.good { color: var(--green); }
+    .metric .val.bad  { color: var(--red); }
+    .metric .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .img-compare {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 20px;
+    }
+    .img-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .img-panel .title { padding: 8px 14px; font-size: 12px; color: var(--muted); }
+    .img-panel img { width: 100%; display: block; }
+
+    .patch-strip {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+      margin-bottom: 20px;
+    }
+    .patch-strip h3 { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .swatches { display: flex; flex-wrap: nowrap; gap: 2px; }
+    .swatch-col { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .swatch-cell { height: 20px; border-radius: 3px; }
+
+    .downloads {
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .btn-dl {
+      flex: 1 1 200px; padding: 12px 20px; border-radius: var(--radius);
+      border: 1px solid var(--accent); background: transparent;
+      color: var(--accent); font-size: 14px; font-weight: 600;
+      cursor: pointer; text-decoration: none; text-align: center;
+      transition: background .15s;
+    }
+    .btn-dl:hover { background: rgba(240,192,64,.12); }
+
+    #error-msg {
+      background: rgba(224,85,85,.12); border: 1px solid var(--red);
+      border-radius: var(--radius); padding: 14px 16px;
+      color: var(--red); display: none; margin-top: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .img-compare { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">ChromaCorrect</div>
+    <div class="sub">Professional Colour Calibration &mdash; ISO 13655 / D65</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Scene photo upload ── -->
+  <div class="drop-zone" id="dz-image" onclick="document.getElementById('inp-image').click()">
+    <input type="file" id="inp-image" accept="image/*" />
+    <div class="icon">&#128247;</div>
+    <div><strong>Scene Photo</strong></div>
+    <div class="label">Include your colour card in the shot &mdash; drag &amp; drop or click</div>
+    <div class="fname" id="img-name"></div>
+  </div>
+
+  <!-- ── Card corner marking ── -->
+  <div id="card-section">
+    <div class="card-header">
+      <div>
+        <h3>Mark Colour Card Corners</h3>
+        <div class="hint">Click the 4 corners of your 24-patch colour card in order</div>
+      </div>
+    </div>
+    <div class="corner-steps">
+      <div class="step-badge" id="step-0"><span class="num">1</span> Top-Left</div>
+      <div class="step-badge" id="step-1"><span class="num">2</span> Top-Right</div>
+      <div class="step-badge" id="step-2"><span class="num">3</span> Bottom-Right</div>
+      <div class="step-badge" id="step-3"><span class="num">4</span> Bottom-Left</div>
+    </div>
+    <div id="card-canvas-wrap">
+      <canvas id="card-canvas"></canvas>
+    </div>
+    <div id="confirm-status">&#10003; 24 patch colours extracted. Ready to calibrate.</div>
+    <div class="card-actions">
+      <button class="btn-sm" id="btn-remark">Re-mark</button>
+      <button class="btn-sm primary" id="btn-confirm" disabled>Confirm Card</button>
+    </div>
+  </div>
+
+  <!-- ── Advanced options ── -->
+  <details id="adv-details">
+    <summary>Advanced options</summary>
+    <div class="adv-inner">
+
+      <!-- Manual _color.txt upload (for camera software users) -->
+      <div class="adv-drop" id="adv-drop" onclick="document.getElementById('inp-color').click()">
+        <input type="file" id="inp-color" accept=".txt,text/plain" />
+        <div style="font-size:13px; color:var(--muted);">&#128462; Upload <strong>_color.txt</strong> manually
+          &mdash; for users with camera calibration software</div>
+        <div class="fname" id="color-name"></div>
+      </div>
+
+      <div class="adv-row">
+        <div>
+          <label for="dark-level">Dark level (default: 0)</label>
+          <input type="number" id="dark-level" value="0" min="0" />
+        </div>
+        <div>
+          <label for="sat-level">Saturation level (default: 65535)</label>
+          <input type="number" id="sat-level" value="65535" min="1" />
+        </div>
+      </div>
+
+    </div>
+  </details>
+
+  <button id="calibrate-btn" disabled>Calibrate Image</button>
+  <span id="demo-link" onclick="loadDemo()">Try Demo &rarr;</span>
+
+  <div class="spinner-wrap" id="spinner">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; color:var(--muted); font-size:13px;">Running colour calibration&hellip;</div>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="results">
+
+    <div class="metrics-bar" id="metrics"></div>
+
+    <div class="img-compare">
+      <div class="img-panel">
+        <div class="title">Original</div>
+        <img id="img-original" alt="original" />
+      </div>
+      <div class="img-panel">
+        <div class="title">Corrected (with calibration badge)</div>
+        <img id="img-corrected" alt="corrected" />
+      </div>
+    </div>
+
+    <div class="patch-strip">
+      <h3>Patch swatches &mdash; Measured &nbsp;|&nbsp; Corrected &nbsp;|&nbsp; Ideal Macbeth</h3>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="downloads" id="downloads"></div>
+
+  </div>
+</main>
+
+<script>
+// ── Macbeth patch names (Macbeth standard order, top-left to bottom-right) ──
+const PATCH_NAMES = [
+  'Dark Skin','Light Skin','Blue Sky','Foliage','Blue Flower','Bluish Green',
+  'Orange','Purplish Blue','Moderate Red','Purple','Yellow Green','Orange Yellow',
+  'Blue','Green','Red','Yellow','Magenta','Cyan',
+  'White','Neutral 8','Neutral 6.5','Neutral 5','Neutral 3.5','Black'
+];
+
+// ── Macbeth reference sRGB values (same order as PATCH_NAMES) ──
+const MACBETH_REF = [
+  [115,82,68],[194,150,130],[98,122,157],[87,108,67],[133,128,177],[103,189,170],
+  [214,126,44],[80,91,166],[193,90,99],[94,60,108],[157,188,64],[224,163,46],
+  [56,61,150],[70,148,73],[175,54,60],[231,199,31],[187,86,149],[8,133,161],
+  [243,243,242],[200,200,200],[160,160,160],[122,122,121],[85,85,85],[52,52,52]
+];
+
+// ── Demo measurements: Macbeth reference + small warm-light bias ──
+// (simulates a camera with a slightly warm colour cast)
+const DEMO_MEAS_LINES = MACBETH_REF.map(([r,g,b]) => {
+  const bias = [12, 6, -8]; // warm tint: more red, slight green, less blue
+  return [
+    Math.min(255, Math.max(0, r + bias[0] + Math.round((Math.random()-0.5)*6))),
+    Math.min(255, Math.max(0, g + bias[1] + Math.round((Math.random()-0.5)*6))),
+    Math.min(255, Math.max(0, b + bias[2] + Math.round((Math.random()-0.5)*6))),
+  ].join(' ');
+}).join('\n');
+
+// ── State ──
+let fileImage   = null;
+let fileColor   = null;
+let isSrgbInput = false;
+let imgNatural  = null;  // full-res Image element for canvas sampling
+let corners     = [];    // [{x,y} in full-image coords] up to 4
+let confirmed   = false;
+
+const dzImage    = document.getElementById('dz-image');
+const inpImage   = document.getElementById('inp-image');
+const inpColor   = document.getElementById('inp-color');
+const btn        = document.getElementById('calibrate-btn');
+const spinner    = document.getElementById('spinner');
+const results    = document.getElementById('results');
+const errDiv     = document.getElementById('error-msg');
+const cardSection = document.getElementById('card-section');
+const canvas     = document.getElementById('card-canvas');
+const ctx        = canvas.getContext('2d');
+const btnRemark  = document.getElementById('btn-remark');
+const btnConfirm = document.getElementById('btn-confirm');
+const confirmStatus = document.getElementById('confirm-status');
+
+// ── File helpers ──
+function setFile(which, file) {
+  if (which === 'image') {
+    fileImage = file;
+    document.getElementById('img-name').textContent = file.name;
+    dzImage.classList.add('filled');
+
+    // Preview in results panel
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('img-original').src = e.target.result; };
+    reader.readAsDataURL(file);
+
+    // Load full-res image for canvas sampling
+    imgNatural = new Image();
+    imgNatural.onload = () => {
+      resetCorners();
+      renderCanvas();
+      cardSection.classList.add('visible');
+    };
+    imgNatural.src = URL.createObjectURL(file);
+
+  } else {
+    fileColor = file;
+    document.getElementById('color-name').textContent = file.name;
+    document.getElementById('adv-drop').classList.add('filled');
+  }
+  updateCalibrateBtn();
+}
+
+function updateCalibrateBtn() {
+  btn.disabled = !(fileImage && (fileColor || confirmed));
+}
+
+inpImage.addEventListener('change', e => e.target.files[0] && setFile('image', e.target.files[0]));
+inpColor.addEventListener('change', e => {
+  if (e.target.files[0]) {
+    isSrgbInput = false;
+    confirmed = false;
+    confirmStatus.style.display = 'none';
+    setFile('color', e.target.files[0]);
+  }
+});
+
+// Drag-and-drop on scene photo zone
+dzImage.addEventListener('dragover', e => { e.preventDefault(); dzImage.classList.add('over'); });
+dzImage.addEventListener('dragleave', () => dzImage.classList.remove('over'));
+dzImage.addEventListener('drop', e => {
+  e.preventDefault(); dzImage.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) setFile('image', file);
+});
+
+// ── Corner marking ──
+function resetCorners() {
+  corners = [];
+  confirmed = false;
+  confirmStatus.style.display = 'none';
+  btnConfirm.disabled = true;
+  updateStepBadges();
+}
+
+function updateStepBadges() {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('step-' + i);
+    el.classList.remove('active', 'done');
+    if (i < corners.length) el.classList.add('done');
+    else if (i === corners.length) el.classList.add('active');
+  }
+}
+
+// Render canvas: image + overlay
+function renderCanvas() {
+  if (!imgNatural) return;
+
+  // Size canvas to fit container (max 900px wide)
+  const maxW = Math.min(900, canvas.parentElement.clientWidth - 32);
+  const scale = Math.min(1, maxW / imgNatural.naturalWidth);
+  canvas.width  = Math.round(imgNatural.naturalWidth  * scale);
+  canvas.height = Math.round(imgNatural.naturalHeight * scale);
+  const dispScale = scale;  // full-image → display
+
+  // Draw image
+  ctx.drawImage(imgNatural, 0, 0, canvas.width, canvas.height);
+
+  // Draw corner markers
+  corners.forEach((c, i) => {
+    const dx = c.x * dispScale;
+    const dy = c.y * dispScale;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = confirmed ? '#4caf7d' : '#f0c040';
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(i + 1, dx, dy);
+  });
+
+  // Draw grid overlay when all 4 corners are set
+  if (corners.length === 4) {
+    const [TL, TR, BR, BL] = corners.map(c => ({
+      x: c.x * dispScale,
+      y: c.y * dispScale
+    }));
+    const color = confirmed ? 'rgba(76,175,125,0.85)' : 'rgba(240,192,64,0.85)';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+
+    // 5 horizontal lines (rows 0..4)
+    for (let row = 0; row <= 4; row++) {
+      const v = row / 4;
+      const lx = TL.x*(1-v) + BL.x*v,  ly = TL.y*(1-v) + BL.y*v;
+      const rx = TR.x*(1-v) + BR.x*v,  ry = TR.y*(1-v) + BR.y*v;
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(rx, ry); ctx.stroke();
+    }
+    // 7 vertical lines (cols 0..6)
+    for (let col = 0; col <= 6; col++) {
+      const u = col / 6;
+      const tx = TL.x*(1-u) + TR.x*u,  ty = TL.y*(1-u) + TR.y*u;
+      const bx = BL.x*(1-u) + BR.x*u,  by = BL.y*(1-u) + BR.y*u;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(bx, by); ctx.stroke();
+    }
+
+    // Patch numbers at cell centers
+    ctx.fillStyle = color;
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 6; col++) {
+        const u = (col + 0.5) / 6, v = (row + 0.5) / 4;
+        const cx = TL.x*(1-u)*(1-v) + TR.x*u*(1-v) + BR.x*u*v + BL.x*(1-u)*v;
+        const cy = TL.y*(1-u)*(1-v) + TR.y*u*(1-v) + BR.y*u*v + BL.y*(1-u)*v;
+        ctx.fillText(row*6+col+1, cx, cy);
+      }
+    }
+  }
+}
+
+// Canvas click → add corner
+canvas.addEventListener('click', e => {
+  if (confirmed || corners.length >= 4) return;
+
+  const rect = canvas.getBoundingClientRect();
+  // Convert display coords → full-image coords
+  const dispScale = canvas.width / imgNatural.naturalWidth;
+  const fullX = (e.clientX - rect.left) * (canvas.width / rect.width) / dispScale;
+  const fullY = (e.clientY - rect.top)  * (canvas.height / rect.height) / dispScale;
+
+  corners.push({ x: fullX, y: fullY });
+  updateStepBadges();
+  renderCanvas();
+
+  if (corners.length === 4) {
+    btnConfirm.disabled = false;
+  }
+});
+
+btnRemark.addEventListener('click', () => {
+  resetCorners();
+  fileColor = null;
+  isSrgbInput = false;
+  updateCalibrateBtn();
+  renderCanvas();
+});
+
+btnConfirm.addEventListener('click', () => {
+  if (corners.length < 4) return;
+  const patches = samplePatches();
+  if (!patches) return;
+
+  // Build "R G B\n" text
+  const txt = patches.map(([r,g,b]) => `${r} ${g} ${b}`).join('\n');
+  const measFile = new File([txt], 'measured.txt', { type: 'text/plain' });
+  fileColor   = measFile;
+  isSrgbInput = true;
+  confirmed   = true;
+
+  confirmStatus.style.display = 'block';
+  btnConfirm.disabled = true;
+  renderCanvas();
+  updateCalibrateBtn();
+});
+
+// ── Bilinear patch sampling ──
+function samplePatches() {
+  // Draw full-res image on an offscreen canvas
+  const off = document.createElement('canvas');
+  off.width  = imgNatural.naturalWidth;
+  off.height = imgNatural.naturalHeight;
+  const oc = off.getContext('2d');
+  oc.drawImage(imgNatural, 0, 0);
+  const imgData = oc.getImageData(0, 0, off.width, off.height);
+
+  const [TL, TR, BR, BL] = corners;  // already in full-image coords
+  const patches = [];
+
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 6; col++) {
+      const u = (col + 0.5) / 6;
+      const v = (row + 0.5) / 4;
+      // Bilinear interpolation of source coordinates
+      const srcX = TL.x*(1-u)*(1-v) + TR.x*u*(1-v) + BR.x*u*v + BL.x*(1-u)*v;
+      const srcY = TL.y*(1-u)*(1-v) + TR.y*u*(1-v) + BR.y*u*v + BL.y*(1-u)*v;
+      // 5×5 pixel average for noise reduction
+      let r=0, g=0, b=0, n=0;
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const px = Math.round(srcX + dx);
+          const py = Math.round(srcY + dy);
+          if (px >= 0 && px < off.width && py >= 0 && py < off.height) {
+            const i = (py * off.width + px) * 4;
+            r += imgData.data[i];
+            g += imgData.data[i+1];
+            b += imgData.data[i+2];
+            n++;
+          }
+        }
+      }
+      patches.push([Math.round(r/n), Math.round(g/n), Math.round(b/n)]);
+    }
+  }
+  return patches;
+}
+
+// ── Demo mode ──
+function loadDemo() {
+  // Build a synthetic scene image on canvas
+  const c = document.createElement('canvas');
+  c.width = 600; c.height = 400;
+  const dc = c.getContext('2d');
+
+  // Warm background gradient
+  const grad = dc.createLinearGradient(0, 0, 600, 400);
+  grad.addColorStop(0, '#e8d5b0');
+  grad.addColorStop(1, '#c4a882');
+  dc.fillStyle = grad;
+  dc.fillRect(0, 0, 600, 400);
+
+  // Sky region
+  dc.fillStyle = '#7ab0c8'; dc.fillRect(0, 0, 600, 120);
+  // Some objects
+  dc.fillStyle = '#6b8c4a'; dc.fillRect(30, 100, 140, 200);   // foliage
+  dc.fillStyle = '#c2907a'; dc.fillRect(200, 60, 120, 180);   // skin tone object
+  dc.fillStyle = '#8888cc'; dc.fillRect(350, 130, 100, 150);  // blue shadow
+  dc.fillStyle = '#d4b860'; dc.fillRect(470, 80, 100, 120);   // warm highlight
+
+  c.toBlob(blob => {
+    const demoImg = new File([blob], 'demo_scene.jpg', { type: 'image/jpeg' });
+    setFile('image', demoImg);
+
+    // Small delay to let setFile/imgNatural load, then set measurements
+    setTimeout(() => {
+      const measFile = new File([DEMO_MEAS_LINES], 'demo_measured.txt', { type: 'text/plain' });
+      fileColor   = measFile;
+      isSrgbInput = true;
+      confirmed   = true;
+      confirmStatus.style.display = 'block';
+      confirmStatus.textContent   = 'Demo data loaded. Click Calibrate to see the pipeline in action.';
+      updateCalibrateBtn();
+    }, 300);
+  }, 'image/jpeg', 0.92);
+}
+
+// ── Calibrate ──
+btn.addEventListener('click', async () => {
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  results.style.display = 'none';
+  errDiv.style.display  = 'none';
+
+  const form = new FormData();
+  form.append('image',         fileImage);
+  form.append('color_txt',     fileColor);
+  form.append('dark_level',    document.getElementById('dark-level').value);
+  form.append('sat_level',     document.getElementById('sat-level').value);
+  form.append('is_srgb_input', isSrgbInput ? 'true' : 'false');
+
+  try {
+    const resp = await fetch('/api/correct', { method: 'POST', body: form });
+    const data = await resp.json();
+
+    if (!resp.ok) throw new Error(data.detail || 'Server error');
+
+    // ── Metrics ──
+    const improvement = data.delta_e_before - data.delta_e_after;
+    document.getElementById('metrics').innerHTML = `
+      <div class="metric">
+        <div class="val ${data.delta_e_before > 5 ? 'bad' : ''}">${data.delta_e_before.toFixed(2)}</div>
+        <div class="lbl">dE2000 before</div>
+      </div>
+      <div class="metric">
+        <div class="val ${data.delta_e_after < 2 ? 'good' : data.delta_e_after < 4 ? '' : 'bad'}">${data.delta_e_after.toFixed(2)}</div>
+        <div class="lbl">dE2000 after</div>
+      </div>
+      <div class="metric">
+        <div class="val ${improvement > 0 ? 'good' : 'bad'}">${improvement > 0 ? '&#9660;' : '&#9650;'} ${Math.abs(improvement).toFixed(2)}</div>
+        <div class="lbl">Improvement</div>
+      </div>
+      <div class="metric">
+        <div class="val">${data.psnr_after.toFixed(1)} dB</div>
+        <div class="lbl">PSNR after</div>
+      </div>
+      <div class="metric">
+        <div class="val ${data.elapsed_s < 3 ? 'good' : ''}">${data.elapsed_s.toFixed(1)}s</div>
+        <div class="lbl">Processing time</div>
+      </div>
+    `;
+
+    // ── Corrected image ──
+    document.getElementById('img-corrected').src = 'data:image/jpeg;base64,' + data.corrected_b64;
+
+    // ── Patch swatches ──
+    const swatches = document.getElementById('swatches');
+    swatches.innerHTML = '';
+    data.patches.forEach(p => {
+      const hue = Math.max(0, 120 - p.de * 20);
+      const col = document.createElement('div');
+      col.className = 'swatch-col';
+      col.title = `${p.name}: \u0394E\u2080\u2080 = ${p.de}`;
+      col.innerHTML = `
+        <div class="swatch-cell" style="background:hsl(${hue},70%,45%)"></div>
+        <div class="swatch-cell" style="background:hsl(${hue},80%,50%)"></div>
+        <div class="swatch-cell" style="background:hsl(${hue},60%,60%)"></div>
+      `;
+      swatches.appendChild(col);
+    });
+
+    // ── Download buttons ──
+    document.getElementById('downloads').innerHTML = `
+      <a class="btn-dl" href="${data.image_url}" download="corrected.jpg">
+        &#8595; Download Corrected Image
+      </a>
+      <a class="btn-dl" href="${data.pdf_url}" download="calibration_report.pdf">
+        &#8595; Download PDF Report
+      </a>
+    `;
+
+    results.style.display = 'block';
+
+  } catch (err) {
+    errDiv.textContent   = 'Error: ' + err.message;
+    errDiv.style.display = 'block';
+  } finally {
+    spinner.style.display = 'none';
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
