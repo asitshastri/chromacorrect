@@ -31,7 +31,6 @@ import uuid
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from color_utils import (
     MACBETH_SRGB,
@@ -115,10 +114,7 @@ _sessions: dict = {}
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="ChromaCorrect", version="1.0.0")
 
-# Serve the static frontend
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "public")
-if os.path.isdir(_static_dir):
-    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
