@@ -29,39 +29,22 @@ import tempfile
 import time
 import uuid
 
-_IMPORT_ERRORS = []
+# Vercel imports this module from the project root; api/ is not on sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-try:
-    import numpy as np
-except Exception as e:
-    _IMPORT_ERRORS.append(f"numpy: {e}")
-    np = None
+import numpy as np
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-try:
-    from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-    from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
-except Exception as e:
-    _IMPORT_ERRORS.append(f"fastapi: {e}")
-    raise  # can't continue without FastAPI
-
-try:
-    from color_utils import (
-        MACBETH_SRGB, delta_e_2000, parse_color_txt, parse_srgb_txt, rgb_to_lab,
-    )
-except Exception as e:
-    _IMPORT_ERRORS.append(f"color_utils: {e}")
-
-try:
-    from pdf_report import generate_pdf
-except Exception as e:
-    _IMPORT_ERRORS.append(f"pdf_report: {e}")
-    generate_pdf = None
-
-try:
-    from watermark import stamp_certification
-except Exception as e:
-    _IMPORT_ERRORS.append(f"watermark: {e}")
-    stamp_certification = None
+from color_utils import (
+    MACBETH_SRGB,
+    delta_e_2000,
+    parse_color_txt,
+    parse_srgb_txt,
+    rgb_to_lab,
+)
+from pdf_report import generate_pdf
+from watermark import stamp_certification
 
 # ── ONNX model session (loaded once at startup) ───────────────────────────────
 _MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.onnx")
@@ -137,18 +120,6 @@ app = FastAPI(title="ChromaCorrect", version="1.0.0")
 
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "public")
 
-
-@app.get("/api/ping")
-async def ping():
-    import fastapi, pydantic
-    return {
-        "ok": True,
-        "python": sys.version,
-        "fastapi": fastapi.__version__,
-        "pydantic": pydantic.__version__,
-        "import_errors": _IMPORT_ERRORS,
-        "model_exists": os.path.exists(_MODEL_PATH),
-    }
 
 
 @app.get("/", response_class=HTMLResponse)
