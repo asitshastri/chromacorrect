@@ -132,6 +132,21 @@ async def serve_index():
         return HTMLResponse(content=f.read())
 
 
+_ALLOWED_DEMO_EXTS = {".jpg", ".jpeg", ".png", ".txt"}
+
+@app.get("/demos/{filename}")
+async def serve_demo(filename: str):
+    """Serve pre-processed NUS demo images and colour files."""
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in _ALLOWED_DEMO_EXTS or ".." in filename or "/" in filename:
+        raise HTTPException(status_code=404, detail="Not found")
+    path = os.path.join(_static_dir, "demos", filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Demo file not found")
+    media = "image/jpeg" if ext in {".jpg", ".jpeg"} else "text/plain"
+    return FileResponse(path, media_type=media)
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _colors_to_patches(colors: np.ndarray, size: int = 64) -> np.ndarray:
