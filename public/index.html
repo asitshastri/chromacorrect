@@ -924,7 +924,6 @@ btn.addEventListener('click', async () => {
       const idx=data.patches.findIndex(x=>x.name===p.name), ref=MACBETH_REF[idx>=0?idx:0]||[128,128,128];
       const deBef=(data.delta_e_before*1.4+p.de*0.3).toFixed(2);
       const impv=(parseFloat(deBef)-p.de).toFixed(2);
-      const rowBg=p.de<2?'':'p.de<4?'background:rgba(240,192,64,.03)':'background:rgba(224,85,85,.04)';
       const status=p.de<2?'<span class="pass-badge pass">PASS</span>':p.de<4?'<span class="pass-badge warn">WARN</span>':'<span class="pass-badge fail">FAIL</span>';
       return `<tr style="${p.de<2?'':p.de<4?'background:rgba(240,192,64,.03)':'background:rgba(224,85,85,.04)'}">
         <td style="color:var(--muted);font-weight:700;">${rank+1}</td>
