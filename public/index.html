@@ -905,25 +905,27 @@ btn.addEventListener('click', async () => {
     // Images
     document.getElementById('img-corrected').src='data:image/jpeg;base64,'+data.corrected_b64;
 
-    // Swatches
+    // Swatches — real measured / corrected / ideal colours
     const sw=document.getElementById('swatches'); sw.innerHTML='';
     data.patches.forEach((p,i)=>{
-      const hue=Math.max(0,120-p.de*20), ref=MACBETH_REF[i]||[128,128,128];
+      const ref=MACBETH_REF[i]||[128,128,128];
+      const mr=p.meas_rgb||[128,128,128], cr=p.corr_rgb||[128,128,128];
+      const deCol=p.de<2?'var(--green)':p.de<4?'var(--accent)':'var(--red)';
       const col=document.createElement('div'); col.className='swatch-col';
-      col.title=`${p.name}: delta-E = ${p.de}`;
-      col.innerHTML=`<div class="swatch-cell" style="background:hsl(${hue},70%,45%)"></div>
-        <div class="swatch-cell" style="background:hsl(${hue},80%,52%)"></div>
+      col.title=`${p.name}\nMeasured: rgb(${mr.join(',')})\nCorrected: rgb(${cr.join(',')})\ndelta-E = ${p.de}`;
+      col.innerHTML=`<div class="swatch-cell" style="background:rgb(${mr.join(',')})"></div>
+        <div class="swatch-cell" style="background:rgb(${cr.join(',')})"></div>
         <div class="swatch-cell" style="background:rgb(${ref.join(',')})"></div>
-        <div class="swatch-de" style="color:hsl(${hue},80%,55%)">${p.de.toFixed(1)}</div>`;
+        <div class="swatch-de" style="color:${deCol}">${p.de.toFixed(1)}</div>`;
       sw.appendChild(col);
     });
 
-    // Per-patch table
+    // Per-patch table — real before/after ΔE
     const sorted=[...data.patches].sort((a,b)=>b.de-a.de);
     document.getElementById('patch-table-body').innerHTML=sorted.map((p,rank)=>{
       const idx=data.patches.findIndex(x=>x.name===p.name), ref=MACBETH_REF[idx>=0?idx:0]||[128,128,128];
-      const deBef=(data.delta_e_before*1.4+p.de*0.3).toFixed(2);
-      const impv=(parseFloat(deBef)-p.de).toFixed(2);
+      const deBef=p.de_before!==undefined ? p.de_before.toFixed(2) : '—';
+      const impv=p.de_before!==undefined ? (p.de_before-p.de).toFixed(2) : '—';
       const status=p.de<2?'<span class="pass-badge pass">PASS</span>':p.de<4?'<span class="pass-badge warn">WARN</span>':'<span class="pass-badge fail">FAIL</span>';
       return `<tr style="${p.de<2?'':p.de<4?'background:rgba(240,192,64,.03)':'background:rgba(224,85,85,.04)'}">
         <td style="color:var(--muted);font-weight:700;">${rank+1}</td>

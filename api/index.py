@@ -71,18 +71,30 @@ def _linear_to_srgb(lin: np.ndarray) -> np.ndarray:
                     1.055 * lin ** (1.0 / 2.4) - 0.055).astype(np.float32)
 
 
+_PATCH_NAMES = [
+    "Dark Skin","Light Skin","Blue Sky","Foliage","Blue Flower","Bluish Green",
+    "Orange","Purplish Blue","Moderate Red","Purple","Yellow Green","Orange Yellow",
+    "Blue","Green","Red","Yellow","Magenta","Cyan",
+    "White","Neutral 8","Neutral 6.5","Neutral 5","Neutral 3.5","Black",
+]
+
+
 def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
     """
-    Compute the least-squares optimal 3×3 CCM in linear-light space.
+    Compute a regularized 3×3 CCM in linear-light space.
 
-    Solves: linear(measured) @ M  ≈  linear(MACBETH_SRGB)
-    This is the mathematically best affine correction for these 24 patches.
-    Returns M (3,3) — apply as:  linear(img) @ M  then re-encode.
+    Tikhonov regularization (lam=0.05) pulls the matrix toward identity,
+    preventing extreme off-diagonal values that shift dark/saturated pixels
+    wildly outside the gamut of the 24 calibration patches.
     """
-    ideal = MACBETH_SRGB.astype(np.float32) / 255.0
+    ideal     = MACBETH_SRGB.astype(np.float32) / 255.0
     meas_lin  = _srgb_to_linear(np.clip(measured_colors, 0.0, 1.0))
     ideal_lin = _srgb_to_linear(ideal)
-    M, _, _, _ = np.linalg.lstsq(meas_lin, ideal_lin, rcond=None)
+    lam = 0.05
+    I3  = np.eye(3, dtype=np.float32)
+    ATA = meas_lin.T @ meas_lin + lam * I3
+    ATB = meas_lin.T @ ideal_lin + lam * I3   # prior: M ≈ I (identity)
+    M   = np.linalg.solve(ATA, ATB)
     return M.astype(np.float32)   # (3, 3)
 
 
@@ -338,18 +350,25 @@ async def correct_image(
     _sessions[session_id] = {"corrected": corr_path, "report": pdf_path}
 
     # ── Build per-patch response ──────────────────────────────────────────────
+    def _f255(v: float) -> int:
+        return int(round(float(v) * 255))
+
     patch_data = []
     for i in range(24):
         patch_data.append({
-            "patch":   i + 1,
-            "name":    f"Patch {i + 1}",
-            "meas_L":  round(float(measured_lab[i, 0]),  2),
-            "meas_a":  round(float(measured_lab[i, 1]),  2),
-            "meas_b":  round(float(measured_lab[i, 2]),  2),
-            "ideal_L": round(float(ideal_lab[i, 0]),     2),
-            "ideal_a": round(float(ideal_lab[i, 1]),     2),
-            "ideal_b": round(float(ideal_lab[i, 2]),     2),
-            "de":      round(float(de_after_patch[i]),   2),
+            "patch":     i + 1,
+            "name":      _PATCH_NAMES[i],
+            "meas_L":    round(float(measured_lab[i, 0]),   2),
+            "meas_a":    round(float(measured_lab[i, 1]),   2),
+            "meas_b":    round(float(measured_lab[i, 2]),   2),
+            "ideal_L":   round(float(ideal_lab[i, 0]),      2),
+            "ideal_a":   round(float(ideal_lab[i, 1]),      2),
+            "ideal_b":   round(float(ideal_lab[i, 2]),      2),
+            "de":        round(float(de_after_patch[i]),    2),
+            "de_before": round(float(de_before_patch[i]),   2),
+            # Real sRGB [R,G,B] 0-255 for swatch rendering in frontend
+            "meas_rgb":  [_f255(measured_colors[i, c])   for c in range(3)],
+            "corr_rgb":  [_f255(corrected_colors[i, c])  for c in range(3)],
         })
 
     elapsed = time.time() - t0
