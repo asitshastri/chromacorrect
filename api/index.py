@@ -101,18 +101,19 @@ def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
 _LUM_WEIGHTS = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
 
 
-def _apply_linear_ccm(img: np.ndarray, M: np.ndarray) -> np.ndarray:
+def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, strength: float = 0.5) -> np.ndarray:
     """
     Apply a linear-space 3×3 CCM to an sRGB float32 image (H,W,3)→(H,W,3).
 
-    After correction, the image is rescaled so its mean luminance matches the
-    original.  This strips out the exposure-shift component of the CCM (which
-    comes from the calibration card being shot in different lighting than
-    assumed by the Macbeth reference values) while keeping the colour-cast fix.
+    `strength` blends M with identity (0=no change, 1=full CCM).  Default 0.5
+    avoids overcorrection when the calibration card was shot under different
+    illumination than the Macbeth D50 reference values assume.
     """
     H, W = img.shape[:2]
+    I3   = np.eye(3, dtype=np.float32)
+    M_soft = strength * M + (1.0 - strength) * I3
     lin  = _srgb_to_linear(img.reshape(-1, 3))
-    corr = np.clip(lin @ M, 0.0, 1.0)
+    corr = np.clip(lin @ M_soft, 0.0, 1.0)
 
     # Restore original mean luminance so the CCM only fixes colour cast,
     # not overall exposure.
@@ -208,20 +209,28 @@ def _load_image_bytes(data: bytes, target_size: int = 256):
 
 
 def _apply_correction(img: np.ndarray, matrix: np.ndarray,
-                      bias: np.ndarray = None) -> np.ndarray:
+                      bias: np.ndarray = None, strength: float = 0.5) -> np.ndarray:
     """Apply affine or polynomial colour correction to a full image (H,W,3)→(H,W,3).
-    Luminance is rescaled back to original mean so the model only corrects colour cast."""
+    `strength` blends correction with identity (0=no change, 1=full). Default 0.5."""
     H, W = img.shape[:2]
     flat = img.reshape(-1, 3)
-    if _model_is_poly:
-        corrected = _poly_expand(flat) @ matrix
-    else:
-        corrected = flat @ matrix.T
-    if bias is not None:
-        corrected = corrected + bias
-    corrected = np.clip(corrected, 0.0, 1.0).astype(np.float32)
 
-    orig_lum = float((flat   @ _LUM_WEIGHTS).mean())
+    if _model_is_poly:
+        # Polynomial: no clean identity blend — apply full then lerp with original
+        full_corr = _poly_expand(flat) @ matrix
+        if bias is not None:
+            full_corr = full_corr + bias
+        full_corr = np.clip(full_corr, 0.0, 1.0).astype(np.float32)
+        corrected = strength * full_corr + (1.0 - strength) * flat
+    else:
+        I3 = np.eye(matrix.shape[0], matrix.shape[1], dtype=np.float32)
+        M_soft = strength * matrix + (1.0 - strength) * I3.T
+        corrected = flat @ M_soft.T
+        if bias is not None:
+            corrected = corrected + bias * strength
+        corrected = np.clip(corrected, 0.0, 1.0).astype(np.float32)
+
+    orig_lum = float((flat      @ _LUM_WEIGHTS).mean())
     corr_lum = float((corrected @ _LUM_WEIGHTS).mean())
     if corr_lum > 1e-6 and orig_lum > 1e-6:
         corrected = np.clip(corrected * (orig_lum / corr_lum), 0.0, 1.0)
