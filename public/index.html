@@ -17,7 +17,6 @@
       --accent:    #f0c040;
       --accent2:   #e8a820;
       --green:     #3ecf72;
-      --green-dim: #2a8c4e;
       --red:       #e05555;
       --blue:      #5b8cf5;
       --muted:     #7a82a0;
@@ -46,99 +45,81 @@
       justify-content: space-between;
       gap: 16px;
     }
-    .header-left  { display: flex; align-items: center; gap: 14px; }
-    .logo-icon {
-      width: 38px; height: 38px; border-radius: 9px;
-      background: linear-gradient(135deg, #f0c040, #e8803a);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, #f0c040 0%, #e8803a 100%);
+      display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; padding: 7px;
     }
-    .logo-text   { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
-    .logo-sub    { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.3px; }
+    .logo-mark span {
+      border-radius: 2px; display: block;
+    }
+    .logo-mark span:nth-child(1) { background: #a0522d; }
+    .logo-mark span:nth-child(2) { background: #4169e1; }
+    .logo-mark span:nth-child(3) { background: #228b22; }
+    .logo-mark span:nth-child(4) { background: #f5f5f5; }
+    .logo-text { font-size: 21px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+    .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
     .header-badge {
-      background: rgba(240,192,64,.1); border: 1px solid rgba(240,192,64,.3);
+      background: rgba(240,192,64,.1); border: 1px solid rgba(240,192,64,.25);
       border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--accent);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px; white-space: nowrap;
     }
 
-    main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
-
-    /* ── Section label ── */
-    .section-label {
-      font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--muted);
-      text-transform: uppercase; margin-bottom: 8px; margin-top: 24px;
-    }
+    main { max-width: 1060px; margin: 0 auto; padding: 28px 20px 60px; }
 
     /* ── Upload zone ── */
     .drop-zone {
-      border: 2px dashed var(--border2);
-      border-radius: var(--radius);
-      background: var(--card);
-      padding: 36px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .2s, background .2s, transform .1s;
+      border: 2px dashed var(--border2); border-radius: var(--radius);
+      background: var(--card); padding: 40px 20px; text-align: center;
+      cursor: pointer; transition: border-color .2s, background .2s, transform .1s;
       margin-bottom: 14px;
-      position: relative;
     }
-    .drop-zone:hover, .drop-zone.over {
-      border-color: var(--accent);
-      background: var(--card2);
-      transform: translateY(-1px);
-    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--card2); transform: translateY(-1px); }
     .drop-zone.filled { border-color: var(--green); border-style: solid; }
-    .drop-zone .dz-icon { font-size: 36px; margin-bottom: 10px; display: block; }
-    .drop-zone .dz-title { font-size: 15px; font-weight: 600; color: var(--text); }
-    .drop-zone .dz-hint { color: var(--muted); font-size: 12px; margin-top: 5px; }
-    .drop-zone .fname { color: var(--green); font-size: 12px; margin-top: 6px; word-break: break-all; }
-    .drop-zone input  { display: none; }
+    .dz-icon-wrap {
+      width: 48px; height: 48px; border-radius: 10px; background: var(--surface);
+      border: 1px solid var(--border2); display: inline-flex; align-items: center;
+      justify-content: center; margin-bottom: 12px;
+    }
+    .dz-icon-wrap svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 1.5; }
+    .dz-title { font-size: 15px; font-weight: 600; }
+    .dz-hint  { color: var(--muted); font-size: 12px; margin-top: 5px; }
+    .fname    { color: var(--green); font-size: 12px; margin-top: 6px; word-break: break-all; }
+    .drop-zone input { display: none; }
 
     /* ── Card marking ── */
     #card-section {
-      display: none;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 14px;
-      overflow: hidden;
+      display: none; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 14px; overflow: hidden;
     }
     #card-section.visible { display: block; }
-
     .card-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
     }
     .card-header h3 { font-size: 13px; font-weight: 600; }
     .card-header .hint { font-size: 12px; color: var(--muted); }
-
     .corner-steps {
       display: flex; gap: 6px; padding: 10px 16px;
       border-bottom: 1px solid var(--border); flex-wrap: wrap;
     }
     .step-badge {
-      display: flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: 20px;
-      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+      border-radius: 20px; background: var(--bg); border: 1px solid var(--border);
       font-size: 12px; color: var(--muted); transition: all .2s;
     }
     .step-badge.active { border-color: var(--accent); color: var(--accent); }
     .step-badge.done   { border-color: var(--green);  color: var(--green); }
     .step-badge .num {
       width: 18px; height: 18px; border-radius: 50%; background: var(--border);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px;
     }
     .step-badge.active .num { background: var(--accent); color: #111; }
     .step-badge.done   .num { background: var(--green);  color: #111; }
-
-    #card-canvas-wrap { position: relative; padding: 12px 16px; text-align: center; cursor: crosshair; }
+    #card-canvas-wrap { padding: 12px 16px; text-align: center; cursor: crosshair; }
     #card-canvas { max-width: 100%; border-radius: 6px; display: block; margin: 0 auto; }
-
-    .card-actions {
-      padding: 10px 16px; display: flex; gap: 10px;
-      border-top: 1px solid var(--border); flex-wrap: wrap;
-    }
+    .card-actions { padding: 10px 16px; display: flex; gap: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
     .btn-sm {
       padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
       background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer;
@@ -148,7 +129,6 @@
     .btn-sm.primary { border-color: var(--accent); color: var(--accent); }
     .btn-sm.primary:hover { background: rgba(240,192,64,.1); }
     .btn-sm:disabled { opacity: .4; cursor: not-allowed; }
-
     #confirm-status { font-size: 12px; color: var(--green); padding: 10px 16px; display: none; }
 
     /* ── Advanced options ── */
@@ -167,8 +147,7 @@
     }
     .adv-drop {
       border: 1px dashed var(--border); border-radius: var(--radius-sm);
-      padding: 14px 16px; text-align: center; cursor: pointer; margin-bottom: 14px;
-      transition: border-color .2s;
+      padding: 14px 16px; text-align: center; cursor: pointer; margin-bottom: 14px; transition: border-color .2s;
     }
     .adv-drop:hover { border-color: var(--muted); }
     .adv-drop.filled { border-color: var(--green); }
@@ -181,7 +160,7 @@
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #111; font-size: 15px; font-weight: 700;
       cursor: pointer; transition: opacity .2s, transform .1s;
-      box-shadow: 0 4px 16px rgba(240,192,64,.2);
+      box-shadow: 0 4px 16px rgba(240,192,64,.2); letter-spacing: 0.3px;
     }
     #calibrate-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
     #calibrate-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
@@ -189,20 +168,18 @@
 
     /* ── Demo gallery ── */
     .demo-section {
-      margin-top: 20px;
-      background: var(--card); border: 1px solid var(--border);
+      margin-top: 20px; background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 16px;
     }
-    .demo-section-title {
-      font-size: 12px; color: var(--muted); margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
+    .demo-section-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
     }
-    .demo-section-title::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
+    .demo-section-header span {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--muted);
     }
-    .demo-cards {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;
-    }
+    .demo-section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .demo-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
     .demo-card {
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       overflow: hidden; cursor: pointer; transition: border-color .2s, transform .15s;
@@ -211,20 +188,24 @@
     .demo-card:hover { border-color: var(--accent); transform: translateY(-2px); }
     .demo-card:active { transform: translateY(0); }
     .demo-card img { width: 100%; height: 100px; object-fit: cover; display: block; }
-    .demo-card-info { padding: 8px 10px; }
+    .demo-card-info { padding: 9px 11px; }
     .demo-card-name { font-size: 12px; font-weight: 600; color: var(--text); }
     .demo-card-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .demo-card-badge {
-      display: inline-block; margin-top: 5px;
-      background: rgba(91,140,245,.15); border: 1px solid rgba(91,140,245,.3);
+    .demo-card-tag {
+      display: inline-block; margin-top: 6px;
+      background: rgba(91,140,245,.12); border: 1px solid rgba(91,140,245,.25);
       color: var(--blue); font-size: 10px; padding: 2px 7px; border-radius: 10px;
+      font-weight: 600; letter-spacing: 0.3px;
     }
-    .demo-card.loading { opacity: .6; pointer-events: none; }
+    .demo-card-tag.synthetic {
+      background: rgba(240,192,64,.12); border-color: rgba(240,192,64,.25); color: var(--accent);
+    }
+    .demo-card.loading { opacity: .5; pointer-events: none; }
 
     /* ── Spinner ── */
     .spinner-wrap { text-align: center; padding: 48px; display: none; }
     .spinner {
-      display: inline-block; width: 42px; height: 42px;
+      display: inline-block; width: 40px; height: 40px;
       border: 3px solid var(--border2); border-top-color: var(--accent);
       border-radius: 50%; animation: spin .8s linear infinite;
     }
@@ -235,125 +216,117 @@
     #error-msg {
       background: rgba(224,85,85,.1); border: 1px solid var(--red);
       border-radius: var(--radius); padding: 14px 16px;
-      color: var(--red); display: none; margin-top: 16px;
+      color: var(--red); display: none; margin-top: 16px; font-size: 13px;
     }
 
     /* ── Results ── */
     #results { display: none; margin-top: 28px; }
 
-    /* Results header with grade */
     .results-header {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
     }
     .results-title { font-size: 18px; font-weight: 700; }
     .grade-badge {
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 10px;
       padding: 8px 16px; border-radius: 24px; border: 2px solid; font-weight: 700;
     }
     .grade-letter { font-size: 22px; font-weight: 900; }
-    .grade-label  { font-size: 12px; line-height: 1.2; }
-
+    .grade-main   { font-size: 12px; font-weight: 700; }
+    .grade-sub    { font-size: 10px; opacity: .75; margin-top: 1px; }
     .grade-A { border-color: var(--green);  color: var(--green);  background: rgba(62,207,114,.08); }
     .grade-B { border-color: #7ec87e;       color: #7ec87e;       background: rgba(126,200,126,.08); }
     .grade-C { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,.08); }
     .grade-D { border-color: #e89040;       color: #e89040;       background: rgba(232,144,64,.08); }
     .grade-F { border-color: var(--red);    color: var(--red);    background: rgba(224,85,85,.08); }
 
-    /* Improvement summary */
-    .improvement-summary {
+    /* Improvement bar */
+    .improv-row {
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px;
-      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
     }
-    .improv-big {
-      font-size: 28px; font-weight: 800; color: var(--green);
-    }
-    .improv-label { font-size: 13px; color: var(--muted); }
-    .improv-pct { font-size: 14px; color: var(--text2); font-weight: 600; }
+    .improv-big   { font-size: 28px; font-weight: 800; color: var(--green); }
+    .improv-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .divider-v    { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .method-tag   { margin-left: auto; font-size: 11px; color: var(--muted); }
 
-    /* ΔE progress bar */
-    .de-bar-wrap { margin-bottom: 16px; }
-    .de-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
-    .de-bar {
-      position: relative; height: 12px; border-radius: 6px;
-      background: linear-gradient(to right, #3ecf72 0%, #f0c040 35%, #e89040 60%, #e05555 85%);
-      overflow: visible;
+    /* DE bar */
+    .de-bar-section { margin-bottom: 18px; }
+    .de-bar-top { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .de-bar-bg  {
+      position: relative; height: 14px; border-radius: 7px;
+      background: var(--card2); border: 1px solid var(--border); overflow: visible;
     }
-    .de-bar-marker {
-      position: absolute; top: -4px; width: 4px; height: 20px;
-      border-radius: 2px; transform: translateX(-50%);
+    .de-bar-fill {
+      position: absolute; inset: 0; border-radius: 7px;
+      background: linear-gradient(to right, #3ecf72 0%, #f0c040 30%, #e89040 60%, #e05555 85%);
     }
-    .de-bar-marker.before { background: var(--red); }
-    .de-bar-marker.after  { background: var(--green); }
-    .de-bar-tip {
-      position: absolute; top: 24px; font-size: 10px; transform: translateX(-50%);
-      white-space: nowrap; color: var(--text2);
+    .de-marker {
+      position: absolute; top: -5px; width: 4px; height: 24px;
+      border-radius: 2px; transform: translateX(-50%); transition: left .5s ease;
     }
-    .de-bar-bg { height: 12px; border-radius: 6px; background: var(--card2); border: 1px solid var(--border); position: relative; overflow: visible; }
+    .de-marker.before { background: var(--red); }
+    .de-marker.after  { background: var(--green); }
+    .de-tip {
+      position: absolute; top: 26px; font-size: 10px; font-weight: 600;
+      transform: translateX(-50%); white-space: nowrap; transition: left .5s ease;
+    }
+    .de-tip.before { color: var(--red); }
+    .de-tip.after  { color: var(--green); }
 
     /* Metrics grid */
     .metrics-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
       gap: 12px; margin-bottom: 20px;
     }
-    .metric-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px 16px;
+    .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .mc-label  { font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .mc-val    { font-size: 24px; font-weight: 800; line-height: 1; }
+    .mc-val.good { color: var(--green); }
+    .mc-val.warn { color: var(--accent); }
+    .mc-val.bad  { color: var(--red); }
+    .mc-val.neutral { color: var(--text); }
+    .mc-sub    { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .mc-badge  {
+      display: inline-block; margin-top: 7px; font-size: 10px;
+      padding: 2px 8px; border-radius: 10px; font-weight: 600;
     }
-    .metric-card .mc-icon { font-size: 18px; margin-bottom: 6px; }
-    .metric-card .mc-val  { font-size: 24px; font-weight: 800; line-height: 1; }
-    .metric-card .mc-lbl  { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .mc-val.good  { color: var(--green); }
-    .mc-val.warn  { color: var(--accent); }
-    .mc-val.bad   { color: var(--red); }
-    .mc-badge {
-      display: inline-block; margin-top: 6px;
-      font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600;
-    }
-    .mc-badge.green { background: rgba(62,207,114,.15); color: var(--green); border: 1px solid rgba(62,207,114,.3); }
-    .mc-badge.amber { background: rgba(240,192,64,.15);  color: var(--accent); border: 1px solid rgba(240,192,64,.3); }
-    .mc-badge.red   { background: rgba(224,85,85,.15);   color: var(--red);    border: 1px solid rgba(224,85,85,.3); }
-    .mc-badge.blue  { background: rgba(91,140,245,.15);  color: var(--blue);   border: 1px solid rgba(91,140,245,.3); }
+    .mc-badge.green { background: rgba(62,207,114,.13); color: var(--green); }
+    .mc-badge.amber { background: rgba(240,192,64,.13);  color: var(--accent); }
+    .mc-badge.red   { background: rgba(224,85,85,.13);   color: var(--red); }
+    .mc-badge.blue  { background: rgba(91,140,245,.13);  color: var(--blue); }
 
-    /* Image compare slider */
+    /* Compare slider */
     .compare-outer {
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
     }
-    .compare-title {
+    .compare-title-bar {
       padding: 10px 14px; border-bottom: 1px solid var(--border);
       font-size: 12px; color: var(--muted);
     }
-    .compare-wrap {
-      position: relative; cursor: ew-resize; user-select: none;
-      line-height: 0; overflow: hidden;
-    }
+    .compare-wrap { position: relative; cursor: ew-resize; user-select: none; line-height: 0; overflow: hidden; }
     .compare-before { position: relative; }
     .compare-before img { width: 100%; display: block; }
-    .compare-after {
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      overflow: hidden;
-    }
+    .compare-after { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
     .compare-after img { width: 100%; display: block; }
     .compare-handle {
       position: absolute; top: 0; bottom: 0; width: 3px;
-      background: #fff; cursor: ew-resize; z-index: 10;
-      transform: translateX(-50%);
+      background: rgba(255,255,255,.9); cursor: ew-resize; z-index: 10; transform: translateX(-50%);
     }
     .compare-handle::before {
-      content: '⟺'; position: absolute; top: 50%; left: 50%;
+      content: ''; position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff; color: #111;
-      width: 30px; height: 30px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.4);
-      line-height: 30px; text-align: center;
+      background: #fff; width: 28px; height: 28px; border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2.5'%3E%3Cpath d='M8 3L3 8l5 5M16 3l5 5-5 5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: center; background-size: 14px;
     }
     .compare-lbl {
       position: absolute; bottom: 10px; font-size: 11px; font-weight: 600;
       color: #fff; background: rgba(0,0,0,.5); padding: 3px 8px;
-      border-radius: 4px; z-index: 5;
+      border-radius: 4px; z-index: 5; letter-spacing: 0.3px;
     }
     .compare-lbl.left  { left: 10px; }
     .compare-lbl.right { right: 10px; }
@@ -363,64 +336,49 @@
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px;
     }
-    .patch-strip-title {
-      font-size: 12px; color: var(--muted); margin-bottom: 10px;
-      display: flex; align-items: center; gap: 12px;
+    .patch-strip-header {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; display: flex; justify-content: space-between;
     }
-    .swatch-legend span { font-size: 10px; color: var(--muted); margin-right: 8px; }
     .swatches { display: flex; gap: 3px; }
     .swatch-col { display: flex; flex-direction: column; gap: 3px; flex: 1; cursor: default; }
-    .swatch-cell { height: 22px; border-radius: 3px; }
-    .swatch-col .swatch-name { font-size: 8px; color: var(--muted); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .swatch-col .swatch-de { font-size: 9px; text-align: center; font-weight: 600; }
+    .swatch-cell { height: 22px; border-radius: 2px; }
+    .swatch-de { font-size: 9px; text-align: center; font-weight: 600; padding-top: 1px; }
 
-    /* Per-patch table */
+    /* Patch table */
     .patch-table-wrap {
       background: var(--card); border: 1px solid var(--border);
       border-radius: var(--radius); margin-bottom: 20px; overflow: hidden;
     }
-    .patch-table-header {
+    .patch-table-hdr {
       padding: 12px 16px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
     }
-    .patch-table-header h3 { font-size: 13px; font-weight: 600; }
-    .patch-table-header .sub { font-size: 11px; color: var(--muted); }
-    .patch-table {
-      width: 100%; border-collapse: collapse; font-size: 12px;
-    }
+    .patch-table-hdr h3 { font-size: 13px; font-weight: 600; }
+    .patch-table-hdr .sub { font-size: 11px; color: var(--muted); }
+    .patch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .patch-table th {
-      padding: 8px 12px; text-align: left; font-size: 11px;
-      color: var(--muted); background: var(--surface); font-weight: 600;
-      border-bottom: 1px solid var(--border); letter-spacing: 0.3px;
+      padding: 8px 12px; text-align: left; font-size: 11px; color: var(--muted);
+      background: var(--surface); font-weight: 600; border-bottom: 1px solid var(--border);
+      letter-spacing: 0.3px;
     }
-    .patch-table td {
-      padding: 7px 12px; border-bottom: 1px solid var(--border);
-      transition: background .15s;
-    }
+    .patch-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
     .patch-table tr:last-child td { border-bottom: none; }
     .patch-table tr:hover td { background: var(--card2); }
-    .patch-table .rank { color: var(--muted); font-weight: 700; }
-    .patch-table .swatch-dot {
-      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-      margin-right: 6px; vertical-align: middle;
-    }
-    .pass-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 10px;
-      font-size: 10px; font-weight: 700;
-    }
-    .pass-badge.pass { background: rgba(62,207,114,.15); color: var(--green); }
-    .pass-badge.warn { background: rgba(240,192,64,.15);  color: var(--accent); }
-    .pass-badge.fail { background: rgba(224,85,85,.15);   color: var(--red); }
+    .swatch-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .pass-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+    .pass-badge.pass { background: rgba(62,207,114,.13); color: var(--green); }
+    .pass-badge.warn { background: rgba(240,192,64,.13);  color: var(--accent); }
+    .pass-badge.fail { background: rgba(224,85,85,.13);   color: var(--red); }
 
-    /* Download buttons */
+    /* Downloads */
     .downloads { display: flex; gap: 12px; flex-wrap: wrap; }
     .btn-dl {
       flex: 1 1 200px; padding: 12px 20px; border-radius: var(--radius);
       border: 1px solid var(--accent); background: transparent;
       color: var(--accent); font-size: 14px; font-weight: 600;
       cursor: pointer; text-decoration: none; text-align: center;
-      transition: background .15s, transform .1s;
-      display: block;
+      transition: background .15s, transform .1s; display: block;
     }
     .btn-dl:hover { background: rgba(240,192,64,.1); transform: translateY(-1px); }
 
@@ -436,7 +394,9 @@
 
 <header>
   <div class="header-left">
-    <div class="logo-icon">&#127752;</div>
+    <div class="logo-mark">
+      <span></span><span></span><span></span><span></span>
+    </div>
     <div>
       <div class="logo-text">ChromaCorrect</div>
       <div class="logo-sub">Professional Colour Calibration &nbsp;&middot;&nbsp; ISO 13655 &nbsp;&middot;&nbsp; D65</div>
@@ -447,16 +407,18 @@
 
 <main>
 
-  <!-- ── Scene photo upload ── -->
+  <!-- Scene photo upload -->
   <div class="drop-zone" id="dz-image" onclick="document.getElementById('inp-image').click()">
     <input type="file" id="inp-image" accept="image/*" />
-    <span class="dz-icon">&#128247;</span>
+    <div class="dz-icon-wrap">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    </div>
     <div class="dz-title">Scene Photo</div>
     <div class="dz-hint">Include your Macbeth ColorChecker card in the shot &mdash; drag &amp; drop or click</div>
     <div class="fname" id="img-name"></div>
   </div>
 
-  <!-- ── Card corner marking ── -->
+  <!-- Card corner marking -->
   <div id="card-section">
     <div class="card-header">
       <div>
@@ -473,20 +435,20 @@
     <div id="card-canvas-wrap">
       <canvas id="card-canvas"></canvas>
     </div>
-    <div id="confirm-status">&#10003; 24 patch colours extracted. Ready to calibrate.</div>
+    <div id="confirm-status">Colours extracted &mdash; ready to calibrate.</div>
     <div class="card-actions">
       <button class="btn-sm" id="btn-remark">Re-mark</button>
       <button class="btn-sm primary" id="btn-confirm" disabled>Confirm Card</button>
     </div>
   </div>
 
-  <!-- ── Advanced options ── -->
+  <!-- Advanced options -->
   <details id="adv-details">
-    <summary>&#9881; Advanced options</summary>
+    <summary>Advanced options</summary>
     <div class="adv-inner">
       <div class="adv-drop" id="adv-drop" onclick="document.getElementById('inp-color').click()">
         <input type="file" id="inp-color" accept=".txt,text/plain" />
-        <div style="font-size:13px; color:var(--muted);">&#128462; Upload <strong>_color.txt</strong> manually &mdash; for camera calibration software users</div>
+        <div style="font-size:13px; color:var(--muted);">Upload <strong>_color.txt</strong> manually &mdash; for camera calibration software users</div>
         <div class="fname" id="color-name"></div>
       </div>
       <div class="adv-row">
@@ -502,42 +464,44 @@
     </div>
   </details>
 
-  <button id="calibrate-btn" disabled>&#9654;&nbsp; Calibrate Image</button>
+  <button id="calibrate-btn" disabled>Calibrate Image</button>
 
-  <!-- ── Demo gallery ── -->
+  <!-- Demo gallery -->
   <div class="demo-section">
-    <div class="demo-section-title">Try a real dataset image</div>
+    <div class="demo-section-header">
+      <span>Try a dataset image</span>
+    </div>
     <div class="demo-cards">
       <div class="demo-card" id="demo-Canon1Ds" onclick="loadDemoCase('Canon1Ds')">
         <img src="/demos/Canon1Ds.jpg" alt="Canon 1Ds" loading="lazy" />
         <div class="demo-card-info">
           <div class="demo-card-name">Canon 1Ds Mk III</div>
-          <div class="demo-card-sub">Warm scene, indoor lighting</div>
-          <span class="demo-card-badge">NUS 8-Camera</span>
+          <div class="demo-card-sub">Indoor, warm lighting</div>
+          <span class="demo-card-tag">NUS 8-Camera</span>
         </div>
       </div>
       <div class="demo-card" id="demo-NikonD5200" onclick="loadDemoCase('NikonD5200')">
         <img src="/demos/NikonD5200.jpg" alt="Nikon D5200" loading="lazy" />
         <div class="demo-card-info">
           <div class="demo-card-name">Nikon D5200</div>
-          <div class="demo-card-sub">Daylight outdoor scene</div>
-          <span class="demo-card-badge">NUS 8-Camera</span>
+          <div class="demo-card-sub">Outdoor, daylight</div>
+          <span class="demo-card-tag">NUS 8-Camera</span>
         </div>
       </div>
       <div class="demo-card" id="demo-SonyA57" onclick="loadDemoCase('SonyA57')">
         <img src="/demos/SonyA57.jpg" alt="Sony A57" loading="lazy" />
         <div class="demo-card-info">
           <div class="demo-card-name">Sony A57</div>
-          <div class="demo-card-sub">Mixed light environment</div>
-          <span class="demo-card-badge">NUS 8-Camera</span>
+          <div class="demo-card-sub">Mixed light scene</div>
+          <span class="demo-card-tag">NUS 8-Camera</span>
         </div>
       </div>
       <div class="demo-card" onclick="loadSyntheticDemo()">
-        <div style="height:100px; background:linear-gradient(135deg,#7ab0c8,#c2907a,#8888cc,#d4b860); display:flex; align-items:center; justify-content:center; font-size:28px;">&#127775;</div>
+        <div style="height:100px;background:linear-gradient(135deg,#7ab0c8,#c2907a,#8888cc,#d4b860);"></div>
         <div class="demo-card-info">
           <div class="demo-card-name">Synthetic Scene</div>
-          <div class="demo-card-sub">Generated warm-cast demo</div>
-          <span class="demo-card-badge" style="background:rgba(240,192,64,.15);color:var(--accent);border-color:rgba(240,192,64,.3)">Synthetic</span>
+          <div class="demo-card-sub">Generated warm-cast test</div>
+          <span class="demo-card-tag synthetic">Synthetic</span>
         </div>
       </div>
     </div>
@@ -550,7 +514,7 @@
 
   <div id="error-msg"></div>
 
-  <!-- ── Results ── -->
+  <!-- Results -->
   <div id="results">
 
     <div class="results-header">
@@ -558,47 +522,46 @@
       <div class="grade-badge grade-C" id="grade-badge">
         <span class="grade-letter" id="grade-letter">C</span>
         <div>
-          <div id="grade-label" style="font-size:12px;">Noticeable</div>
-          <div style="font-size:10px; opacity:.8;">on comparison</div>
+          <div class="grade-main" id="grade-main">Noticeable</div>
+          <div class="grade-sub"  id="grade-sub">on comparison</div>
         </div>
       </div>
     </div>
 
-    <!-- Improvement summary -->
-    <div class="improvement-summary" id="improv-summary">
+    <div class="improv-row" id="improv-row">
       <div>
-        <div class="improv-big" id="improv-delta">&#8595; 0.00</div>
-        <div class="improv-label">ΔE₀₀ improvement</div>
+        <div class="improv-big" id="improv-delta">0.00</div>
+        <div class="improv-label">delta-E improvement</div>
       </div>
-      <div style="width:1px; height:40px; background:var(--border);"></div>
+      <div class="divider-v"></div>
       <div>
-        <div class="improv-pct" id="improv-pct">0%</div>
+        <div style="font-size:18px;font-weight:700;" id="improv-pct">0%</div>
         <div class="improv-label">reduction</div>
       </div>
-      <div style="margin-left:auto; font-size:12px; color:var(--muted);" id="method-info"></div>
+      <div class="method-tag" id="method-tag"></div>
     </div>
 
-    <!-- ΔE progress bar -->
-    <div class="de-bar-wrap" id="de-bar-wrap" style="margin-bottom:20px;">
-      <div class="de-bar-label">
-        <span>ΔE₀₀ scale (0 = perfect, 10+ = significant)</span>
-        <span style="font-size:10px; color:var(--green);">&#11044; After &nbsp; <span style="color:var(--red);">&#11044;</span> Before</span>
+    <!-- DE progress bar -->
+    <div class="de-bar-section">
+      <div class="de-bar-top">
+        <span>Delta-E scale &mdash; 0 = perfect, 10+ = significant error</span>
+        <span style="color:var(--green);font-size:10px;">After &nbsp;&nbsp;<span style="color:var(--red);">Before</span></span>
       </div>
-      <div class="de-bar-bg" id="de-bar-bg" style="height:14px; border-radius:7px;">
-        <div class="de-bar" style="position:absolute;inset:0;border-radius:7px;"></div>
-        <div class="de-bar-marker before" id="de-marker-before" style="left:80%;"></div>
-        <div class="de-bar-marker after"  id="de-marker-after"  style="left:20%;"></div>
-        <div class="de-bar-tip" id="de-tip-before" style="left:80%; color:var(--red);"></div>
-        <div class="de-bar-tip" id="de-tip-after"  style="left:20%; color:var(--green);"></div>
+      <div class="de-bar-bg" style="margin-bottom:28px;">
+        <div class="de-bar-fill"></div>
+        <div class="de-marker before" id="de-marker-before" style="left:80%;"></div>
+        <div class="de-marker after"  id="de-marker-after"  style="left:20%;"></div>
+        <div class="de-tip before" id="de-tip-before" style="left:80%;"></div>
+        <div class="de-tip after"  id="de-tip-after"  style="left:20%;"></div>
       </div>
     </div>
 
     <!-- Metrics grid -->
     <div class="metrics-grid" id="metrics"></div>
 
-    <!-- Image compare slider -->
+    <!-- Compare slider -->
     <div class="compare-outer">
-      <div class="compare-title">&#8596; Drag the slider to compare &nbsp;&bull;&nbsp; Original vs Corrected</div>
+      <div class="compare-title-bar">Drag to compare &mdash; Original vs Corrected</div>
       <div class="compare-wrap" id="compare-wrap">
         <div class="compare-before">
           <img id="img-original" alt="original" />
@@ -614,27 +577,27 @@
 
     <!-- Patch swatches -->
     <div class="patch-strip">
-      <div class="patch-strip-title">
-        Macbeth Patch Colours
-        <span style="font-size:11px;">Measured &nbsp;|&nbsp; Corrected &nbsp;|&nbsp; Ideal</span>
+      <div class="patch-strip-header">
+        <span>Macbeth Patches (24)</span>
+        <span>Measured &nbsp;/&nbsp; Corrected &nbsp;/&nbsp; Ideal</span>
       </div>
       <div class="swatches" id="swatches"></div>
     </div>
 
-    <!-- Per-patch ranked table -->
+    <!-- Per-patch table -->
     <div class="patch-table-wrap">
-      <div class="patch-table-header">
+      <div class="patch-table-hdr">
         <h3>Per-Patch Analysis</h3>
-        <span class="sub">Sorted by ΔE₀₀ after correction (worst first)</span>
+        <span class="sub">Sorted worst to best</span>
       </div>
       <div style="overflow-x:auto;">
-        <table class="patch-table" id="patch-table">
+        <table class="patch-table">
           <thead>
             <tr>
               <th>#</th>
               <th>Patch</th>
-              <th>ΔE₀₀ Before</th>
-              <th>ΔE₀₀ After</th>
+              <th>Before</th>
+              <th>After</th>
               <th>Improvement</th>
               <th>Status</th>
             </tr>
@@ -644,14 +607,12 @@
       </div>
     </div>
 
-    <!-- Downloads -->
     <div class="downloads" id="downloads"></div>
 
   </div>
 </main>
 
 <script>
-// ── Macbeth patch names ──
 const PATCH_NAMES = [
   'Dark Skin','Light Skin','Blue Sky','Foliage','Blue Flower','Bluish Green',
   'Orange','Purplish Blue','Moderate Red','Purple','Yellow Green','Orange Yellow',
@@ -659,7 +620,6 @@ const PATCH_NAMES = [
   'White','Neutral 8','Neutral 6.5','Neutral 5','Neutral 3.5','Black'
 ];
 
-// Macbeth reference sRGB
 const MACBETH_REF = [
   [115,82,68],[194,150,130],[98,122,157],[87,108,67],[133,128,177],[103,189,170],
   [214,126,44],[80,91,166],[193,90,99],[94,60,108],[157,188,64],[224,163,46],
@@ -668,12 +628,8 @@ const MACBETH_REF = [
 ];
 
 // ── State ──
-let fileImage   = null;
-let fileColor   = null;
-let isSrgbInput = false;
-let imgNatural  = null;
-let corners     = [];
-let confirmed   = false;
+let fileImage = null, fileColor = null, isSrgbInput = false;
+let imgNatural = null, corners = [], confirmed = false;
 
 const dzImage      = document.getElementById('dz-image');
 const inpImage     = document.getElementById('inp-image');
@@ -689,23 +645,16 @@ const btnRemark    = document.getElementById('btn-remark');
 const btnConfirm   = document.getElementById('btn-confirm');
 const confirmStatus = document.getElementById('confirm-status');
 
-// ── File helpers ──
 function setFile(which, file) {
   if (which === 'image') {
     fileImage = file;
     document.getElementById('img-name').textContent = file.name;
     dzImage.classList.add('filled');
-
     const reader = new FileReader();
     reader.onload = e => { document.getElementById('img-original').src = e.target.result; };
     reader.readAsDataURL(file);
-
     imgNatural = new Image();
-    imgNatural.onload = () => {
-      resetCorners();
-      renderCanvas();
-      cardSection.classList.add('visible');
-    };
+    imgNatural.onload = () => { resetCorners(); renderCanvas(); cardSection.classList.add('visible'); };
     imgNatural.src = URL.createObjectURL(file);
   } else {
     fileColor = file;
@@ -721,39 +670,28 @@ function updateCalibrateBtn() {
 
 inpImage.addEventListener('change', e => e.target.files[0] && setFile('image', e.target.files[0]));
 inpColor.addEventListener('change', e => {
-  if (e.target.files[0]) {
-    isSrgbInput = false;
-    confirmed = false;
-    confirmStatus.style.display = 'none';
-    setFile('color', e.target.files[0]);
-  }
+  if (e.target.files[0]) { isSrgbInput = false; confirmed = false; confirmStatus.style.display = 'none'; setFile('color', e.target.files[0]); }
 });
-
 dzImage.addEventListener('dragover', e => { e.preventDefault(); dzImage.classList.add('over'); });
 dzImage.addEventListener('dragleave', () => dzImage.classList.remove('over'));
 dzImage.addEventListener('drop', e => {
   e.preventDefault(); dzImage.classList.remove('over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) setFile('image', file);
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) setFile('image', f);
 });
 
-// ── Corner marking ──
 function resetCorners() {
   corners = []; confirmed = false;
-  confirmStatus.style.display = 'none';
-  btnConfirm.disabled = true;
-  updateStepBadges();
+  confirmStatus.style.display = 'none'; btnConfirm.disabled = true; updateStepBadges();
 }
-
 function updateStepBadges() {
   for (let i = 0; i < 4; i++) {
     const el = document.getElementById('step-' + i);
-    el.classList.remove('active', 'done');
+    el.classList.remove('active','done');
     if (i < corners.length) el.classList.add('done');
     else if (i === corners.length) el.classList.add('active');
   }
 }
-
 function renderCanvas() {
   if (!imgNatural) return;
   const maxW = Math.min(900, canvas.parentElement.clientWidth - 32);
@@ -761,352 +699,254 @@ function renderCanvas() {
   canvas.width  = Math.round(imgNatural.naturalWidth  * scale);
   canvas.height = Math.round(imgNatural.naturalHeight * scale);
   ctx.drawImage(imgNatural, 0, 0, canvas.width, canvas.height);
-
   corners.forEach((c, i) => {
-    const dx = c.x * scale, dy = c.y * scale;
+    const dx = c.x*scale, dy = c.y*scale;
     ctx.beginPath(); ctx.arc(dx, dy, 8, 0, Math.PI*2);
     ctx.fillStyle = confirmed ? '#3ecf72' : '#f0c040'; ctx.fill();
     ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(i+1, dx, dy);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i+1, dx, dy);
   });
-
   if (corners.length === 4) {
-    const [TL, TR, BR, BL] = corners.map(c => ({ x: c.x*scale, y: c.y*scale }));
+    const [TL,TR,BR,BL] = corners.map(c => ({x:c.x*scale, y:c.y*scale}));
     const color = confirmed ? 'rgba(62,207,114,0.85)' : 'rgba(240,192,64,0.85)';
     ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-    for (let row = 0; row <= 4; row++) {
-      const v = row/4;
-      ctx.beginPath();
-      ctx.moveTo(TL.x*(1-v)+BL.x*v, TL.y*(1-v)+BL.y*v);
-      ctx.lineTo(TR.x*(1-v)+BR.x*v, TR.y*(1-v)+BR.y*v);
-      ctx.stroke();
-    }
-    for (let col = 0; col <= 6; col++) {
-      const u = col/6;
-      ctx.beginPath();
-      ctx.moveTo(TL.x*(1-u)+TR.x*u, TL.y*(1-u)+TR.y*u);
-      ctx.lineTo(BL.x*(1-u)+BR.x*u, BL.y*(1-u)+BR.y*u);
-      ctx.stroke();
-    }
-    ctx.fillStyle = color; ctx.font = 'bold 9px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (let row = 0; row < 4; row++) for (let col = 0; col < 6; col++) {
-      const u=(col+0.5)/6, v=(row+0.5)/4;
-      const cx=TL.x*(1-u)*(1-v)+TR.x*u*(1-v)+BR.x*u*v+BL.x*(1-u)*v;
-      const cy=TL.y*(1-u)*(1-v)+TR.y*u*(1-v)+BR.y*u*v+BL.y*(1-u)*v;
-      ctx.fillText(row*6+col+1, cx, cy);
+    for (let r=0; r<=4; r++) { const v=r/4; ctx.beginPath(); ctx.moveTo(TL.x*(1-v)+BL.x*v, TL.y*(1-v)+BL.y*v); ctx.lineTo(TR.x*(1-v)+BR.x*v, TR.y*(1-v)+BR.y*v); ctx.stroke(); }
+    for (let c=0; c<=6; c++) { const u=c/6; ctx.beginPath(); ctx.moveTo(TL.x*(1-u)+TR.x*u, TL.y*(1-u)+TR.y*u); ctx.lineTo(BL.x*(1-u)+BR.x*u, BL.y*(1-u)+BR.y*u); ctx.stroke(); }
+    ctx.fillStyle=color; ctx.font='bold 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for (let r=0; r<4; r++) for (let c=0; c<6; c++) {
+      const u=(c+0.5)/6, v=(r+0.5)/4;
+      ctx.fillText(r*6+c+1, TL.x*(1-u)*(1-v)+TR.x*u*(1-v)+BR.x*u*v+BL.x*(1-u)*v, TL.y*(1-u)*(1-v)+TR.y*u*(1-v)+BR.y*u*v+BL.y*(1-u)*v);
     }
   }
 }
-
 canvas.addEventListener('click', e => {
   if (confirmed || corners.length >= 4) return;
-  const rect = canvas.getBoundingClientRect();
-  const dispScale = canvas.width / imgNatural.naturalWidth;
-  const fullX = (e.clientX - rect.left) * (canvas.width / rect.width) / dispScale;
-  const fullY = (e.clientY - rect.top)  * (canvas.height / rect.height) / dispScale;
-  corners.push({ x: fullX, y: fullY });
+  const rect = canvas.getBoundingClientRect(), ds = canvas.width / imgNatural.naturalWidth;
+  corners.push({ x:(e.clientX-rect.left)*(canvas.width/rect.width)/ds, y:(e.clientY-rect.top)*(canvas.height/rect.height)/ds });
   updateStepBadges(); renderCanvas();
   if (corners.length === 4) btnConfirm.disabled = false;
 });
-
-btnRemark.addEventListener('click', () => {
-  resetCorners(); fileColor = null; isSrgbInput = false;
-  updateCalibrateBtn(); renderCanvas();
-});
-
+btnRemark.addEventListener('click', () => { resetCorners(); fileColor=null; isSrgbInput=false; updateCalibrateBtn(); renderCanvas(); });
 btnConfirm.addEventListener('click', () => {
   if (corners.length < 4) return;
-  const patches = samplePatches();
-  if (!patches) return;
-  const txt = patches.map(([r,g,b]) => `${r} ${g} ${b}`).join('\n');
-  fileColor = new File([txt], 'measured.txt', { type: 'text/plain' });
-  isSrgbInput = true; confirmed = true;
-  confirmStatus.style.display = 'block';
-  btnConfirm.disabled = true; renderCanvas(); updateCalibrateBtn();
+  const patches = samplePatches(); if (!patches) return;
+  fileColor = new File([patches.map(([r,g,b])=>`${r} ${g} ${b}`).join('\n')], 'measured.txt', {type:'text/plain'});
+  isSrgbInput=true; confirmed=true; confirmStatus.style.display='block'; btnConfirm.disabled=true; renderCanvas(); updateCalibrateBtn();
 });
-
 function samplePatches() {
-  const off = document.createElement('canvas');
-  off.width = imgNatural.naturalWidth; off.height = imgNatural.naturalHeight;
-  const oc = off.getContext('2d'); oc.drawImage(imgNatural, 0, 0);
-  const imgData = oc.getImageData(0, 0, off.width, off.height);
-  const [TL, TR, BR, BL] = corners;
-  const patches = [];
-  for (let row = 0; row < 4; row++) for (let col = 0; col < 6; col++) {
+  const off=document.createElement('canvas'); off.width=imgNatural.naturalWidth; off.height=imgNatural.naturalHeight;
+  const oc=off.getContext('2d'); oc.drawImage(imgNatural,0,0);
+  const imgData=oc.getImageData(0,0,off.width,off.height), [TL,TR,BR,BL]=corners, patches=[];
+  for (let row=0;row<4;row++) for (let col=0;col<6;col++) {
     const u=(col+0.5)/6, v=(row+0.5)/4;
-    const srcX=TL.x*(1-u)*(1-v)+TR.x*u*(1-v)+BR.x*u*v+BL.x*(1-u)*v;
-    const srcY=TL.y*(1-u)*(1-v)+TR.y*u*(1-v)+BR.y*u*v+BL.y*(1-u)*v;
+    const sx=TL.x*(1-u)*(1-v)+TR.x*u*(1-v)+BR.x*u*v+BL.x*(1-u)*v;
+    const sy=TL.y*(1-u)*(1-v)+TR.y*u*(1-v)+BR.y*u*v+BL.y*(1-u)*v;
     let r=0,g=0,b=0,n=0;
-    for (let dy=-2; dy<=2; dy++) for (let dx=-2; dx<=2; dx++) {
-      const px=Math.round(srcX+dx), py=Math.round(srcY+dy);
-      if (px>=0&&px<off.width&&py>=0&&py<off.height) {
-        const i=(py*off.width+px)*4;
-        r+=imgData.data[i]; g+=imgData.data[i+1]; b+=imgData.data[i+2]; n++;
-      }
+    for (let dy=-2;dy<=2;dy++) for (let dx=-2;dx<=2;dx++) {
+      const px=Math.round(sx+dx), py=Math.round(sy+dy);
+      if (px>=0&&px<off.width&&py>=0&&py<off.height) { const i=(py*off.width+px)*4; r+=imgData.data[i]; g+=imgData.data[i+1]; b+=imgData.data[i+2]; n++; }
     }
-    patches.push([Math.round(r/n), Math.round(g/n), Math.round(b/n)]);
+    patches.push([Math.round(r/n),Math.round(g/n),Math.round(b/n)]);
   }
   return patches;
 }
 
-// ── Demo: load real NUS dataset image ──
+// ── Demo: load image only, let user mark card manually ──
 async function loadDemoCase(name) {
   const card = document.getElementById('demo-' + name);
   if (card) card.classList.add('loading');
-
   try {
-    const [imgResp, txtResp] = await Promise.all([
-      fetch(`/demos/${name}.jpg`),
-      fetch(`/demos/${name}_color.txt`)
-    ]);
+    const imgResp = await fetch(`/demos/${name}.jpg`);
     const imgBlob = await imgResp.blob();
-    const txtBlob = await txtResp.blob();
-
-    const imgFile = new File([imgBlob], `${name}_demo.jpg`, { type: 'image/jpeg' });
-    const txtFile = new File([txtBlob], `${name}_color.txt`, { type: 'text/plain' });
-
-    setFile('image', imgFile);
-    setTimeout(() => {
-      fileColor   = txtFile;
-      isSrgbInput = true;
-      confirmed   = true;
-      confirmStatus.style.display = 'block';
-      confirmStatus.textContent   = `✓ ${name} demo loaded — measured colours from NUS dataset.`;
-      updateCalibrateBtn();
-      btn.click();
-    }, 400);
-  } catch(e) {
-    console.error('Demo load failed:', e);
-  } finally {
-    if (card) card.classList.remove('loading');
-  }
+    setFile('image', new File([imgBlob], `${name}.jpg`, {type:'image/jpeg'}));
+    // Reset any previous colour file so user must mark corners
+    fileColor = null; isSrgbInput = false; confirmed = false;
+    confirmStatus.style.display = 'none';
+    updateCalibrateBtn();
+    window.scrollTo({top: document.getElementById('card-section').offsetTop - 20, behavior:'smooth'});
+  } catch(e) { console.error('Demo load failed:', e); }
+  finally { if (card) card.classList.remove('loading'); }
 }
 
-// ── Demo: synthetic scene ──
+// ── Demo: synthetic ──
 function loadSyntheticDemo() {
-  const DEMO_MEAS_LINES = MACBETH_REF.map(([r,g,b]) => {
-    const bias = [12, 6, -8];
-    return [
-      Math.min(255, Math.max(0, r+bias[0]+Math.round((Math.random()-0.5)*6))),
-      Math.min(255, Math.max(0, g+bias[1]+Math.round((Math.random()-0.5)*6))),
-      Math.min(255, Math.max(0, b+bias[2]+Math.round((Math.random()-0.5)*6))),
-    ].join(' ');
-  }).join('\n');
-
-  const c = document.createElement('canvas');
-  c.width = 600; c.height = 400;
-  const dc = c.getContext('2d');
-  const grad = dc.createLinearGradient(0,0,600,400);
-  grad.addColorStop(0, '#e8d5b0'); grad.addColorStop(1, '#c4a882');
-  dc.fillStyle = grad; dc.fillRect(0,0,600,400);
-  dc.fillStyle = '#7ab0c8'; dc.fillRect(0,0,600,120);
-  dc.fillStyle = '#6b8c4a'; dc.fillRect(30,100,140,200);
-  dc.fillStyle = '#c2907a'; dc.fillRect(200,60,120,180);
-  dc.fillStyle = '#8888cc'; dc.fillRect(350,130,100,150);
-  dc.fillStyle = '#d4b860'; dc.fillRect(470,80,100,120);
-
+  const DEMO = MACBETH_REF.map(([r,g,b]) => [
+    Math.min(255,Math.max(0,r+12+Math.round((Math.random()-.5)*6))),
+    Math.min(255,Math.max(0,g+6+Math.round((Math.random()-.5)*6))),
+    Math.min(255,Math.max(0,b-8+Math.round((Math.random()-.5)*6))),
+  ].join(' ')).join('\n');
+  const c=document.createElement('canvas'); c.width=600; c.height=400;
+  const dc=c.getContext('2d');
+  const g=dc.createLinearGradient(0,0,600,400); g.addColorStop(0,'#e8d5b0'); g.addColorStop(1,'#c4a882');
+  dc.fillStyle=g; dc.fillRect(0,0,600,400); dc.fillStyle='#7ab0c8'; dc.fillRect(0,0,600,120);
+  dc.fillStyle='#6b8c4a'; dc.fillRect(30,100,140,200); dc.fillStyle='#c2907a'; dc.fillRect(200,60,120,180);
+  dc.fillStyle='#8888cc'; dc.fillRect(350,130,100,150); dc.fillStyle='#d4b860'; dc.fillRect(470,80,100,120);
   c.toBlob(blob => {
-    setFile('image', new File([blob], 'demo_scene.jpg', { type: 'image/jpeg' }));
+    setFile('image', new File([blob],'demo_scene.jpg',{type:'image/jpeg'}));
     setTimeout(() => {
-      fileColor   = new File([DEMO_MEAS_LINES], 'demo_measured.txt', { type: 'text/plain' });
-      isSrgbInput = true; confirmed = true;
-      confirmStatus.style.display = 'block';
-      confirmStatus.textContent   = 'Synthetic demo loaded. Click Calibrate to see the pipeline.';
+      fileColor=new File([DEMO],'demo_measured.txt',{type:'text/plain'});
+      isSrgbInput=true; confirmed=true;
+      confirmStatus.style.display='block';
+      confirmStatus.textContent='Synthetic demo loaded. Click Calibrate.';
       updateCalibrateBtn();
     }, 300);
   }, 'image/jpeg', 0.92);
 }
 
-// ── Grade helper ──
-function computeGrade(de) {
-  if (de < 1.0) return { grade:'A', cls:'grade-A', label:'Imperceptible',    sub:'δE < 1.0' };
-  if (de < 2.0) return { grade:'B', cls:'grade-B', label:'Excellent',        sub:'δE 1–2' };
-  if (de < 4.0) return { grade:'C', cls:'grade-C', label:'Noticeable',       sub:'on comparison' };
-  if (de < 6.0) return { grade:'D', cls:'grade-D', label:'Clearly visible',  sub:'δE 4–6' };
-  return               { grade:'F', cls:'grade-F', label:'Significant error', sub:'δE > 6' };
-}
-
-// ── Image compare slider ──
-(function initCompareSlider() {
-  const wrap   = document.getElementById('compare-wrap');
-  const handle = document.getElementById('compare-handle');
-  const after  = document.getElementById('compare-after');
-  let dragging = false;
-
-  function setPos(clientX) {
-    const rect = wrap.getBoundingClientRect();
-    let pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const pctPx = (pct * 100).toFixed(1);
-    const right = (100 - pct * 100).toFixed(1);
-    handle.style.left = pctPx + '%';
-    after.style.clipPath = `inset(0 ${right}% 0 0)`;
+// ── Compare slider ──
+(function() {
+  const wrap=document.getElementById('compare-wrap'), handle=document.getElementById('compare-handle'), after=document.getElementById('compare-after');
+  let dragging=false;
+  function setPos(cx) {
+    const rect=wrap.getBoundingClientRect();
+    const pct=Math.max(0,Math.min(1,(cx-rect.left)/rect.width))*100;
+    handle.style.left=pct.toFixed(1)+'%';
+    after.style.clipPath=`inset(0 ${(100-pct).toFixed(1)}% 0 0)`;
   }
-
-  handle.addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
-  wrap.addEventListener('mousedown', e => { dragging = true; setPos(e.clientX); });
-  window.addEventListener('mousemove', e => { if (dragging) setPos(e.clientX); });
-  window.addEventListener('mouseup',   () => { dragging = false; });
-  handle.addEventListener('touchstart', e => { dragging = true; e.preventDefault(); });
-  wrap.addEventListener('touchmove',    e => { if (dragging) { e.preventDefault(); setPos(e.touches[0].clientX); } }, { passive: false });
-  window.addEventListener('touchend',   () => { dragging = false; });
+  handle.addEventListener('mousedown', e=>{dragging=true; e.preventDefault();});
+  wrap.addEventListener('mousedown', e=>{dragging=true; setPos(e.clientX);});
+  window.addEventListener('mousemove', e=>{if(dragging) setPos(e.clientX);});
+  window.addEventListener('mouseup', ()=>{dragging=false;});
+  handle.addEventListener('touchstart', e=>{dragging=true; e.preventDefault();});
+  wrap.addEventListener('touchmove', e=>{if(dragging){e.preventDefault(); setPos(e.touches[0].clientX);}},{passive:false});
+  window.addEventListener('touchend', ()=>{dragging=false;});
 })();
+
+// ── Grade ──
+function computeGrade(de) {
+  if (de < 1.0) return {grade:'A', cls:'grade-A', main:'Imperceptible',   sub:'delta-E below 1.0'};
+  if (de < 2.0) return {grade:'B', cls:'grade-B', main:'Excellent',       sub:'delta-E 1.0 to 2.0'};
+  if (de < 4.0) return {grade:'C', cls:'grade-C', main:'Noticeable',      sub:'only on comparison'};
+  if (de < 6.0) return {grade:'D', cls:'grade-D', main:'Clearly visible', sub:'delta-E 4.0 to 6.0'};
+  return              {grade:'F', cls:'grade-F', main:'Significant',      sub:'delta-E above 6.0'};
+}
 
 // ── Calibrate ──
 btn.addEventListener('click', async () => {
-  btn.disabled = true;
-  spinner.style.display = 'block';
-  results.style.display = 'none';
-  errDiv.style.display  = 'none';
-
-  const form = new FormData();
+  btn.disabled=true; spinner.style.display='block';
+  results.style.display='none'; errDiv.style.display='none';
+  const form=new FormData();
   form.append('image',         fileImage);
   form.append('color_txt',     fileColor);
   form.append('dark_level',    document.getElementById('dark-level').value);
   form.append('sat_level',     document.getElementById('sat-level').value);
   form.append('is_srgb_input', isSrgbInput ? 'true' : 'false');
-
   try {
-    const resp = await fetch('/api/correct', { method: 'POST', body: form });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'Server error');
+    const resp=await fetch('/api/correct',{method:'POST',body:form});
+    const data=await resp.json();
+    if (!resp.ok) throw new Error(data.detail||'Server error');
 
-    const deBefore    = data.delta_e_before;
-    const deAfter     = data.delta_e_after;
-    const improvement = deBefore - deAfter;
-    const impPct      = deBefore > 0 ? Math.round(improvement / deBefore * 100) : 0;
+    const deBefore=data.delta_e_before, deAfter=data.delta_e_after;
+    const improvement=deBefore-deAfter, impPct=deBefore>0?Math.round(improvement/deBefore*100):0;
 
-    // ── Grade badge ──
-    const g = computeGrade(deAfter);
-    const gb = document.getElementById('grade-badge');
-    gb.className = 'grade-badge ' + g.cls;
-    document.getElementById('grade-letter').textContent = g.grade;
-    document.getElementById('grade-label').textContent  = g.label;
-    gb.querySelector('div>div:last-child').textContent   = g.sub;
+    // Grade
+    const g=computeGrade(deAfter);
+    const gb=document.getElementById('grade-badge');
+    gb.className='grade-badge '+g.cls;
+    document.getElementById('grade-letter').textContent=g.grade;
+    document.getElementById('grade-main').textContent=g.main;
+    document.getElementById('grade-sub').textContent=g.sub;
 
-    // ── Improvement summary ──
-    document.getElementById('improv-delta').textContent = '↓ ' + improvement.toFixed(2);
-    document.getElementById('improv-pct').textContent   = impPct + '%';
-    document.getElementById('method-info').textContent  = 'Method: ' + (data.method || '');
+    // Improvement row
+    document.getElementById('improv-delta').textContent='↓ '+improvement.toFixed(2);
+    document.getElementById('improv-pct').textContent=impPct+'%';
+    document.getElementById('method-tag').textContent='Method: '+(data.method||'');
 
-    // ── ΔE bar ──
-    const maxDE = 10;
-    const clamp = v => Math.max(0, Math.min(100, v / maxDE * 100));
-    const bPct  = clamp(deBefore), aPct = clamp(deAfter);
-    document.getElementById('de-marker-before').style.left = bPct + '%';
-    document.getElementById('de-marker-after').style.left  = aPct + '%';
-    document.getElementById('de-tip-before').style.left    = bPct + '%';
-    document.getElementById('de-tip-after').style.left     = aPct + '%';
-    document.getElementById('de-tip-before').textContent   = deBefore.toFixed(1);
-    document.getElementById('de-tip-after').textContent    = deAfter.toFixed(1);
+    // DE bar
+    const clamp=v=>Math.max(2,Math.min(96,v/10*100));
+    const bPct=clamp(deBefore), aPct=clamp(deAfter);
+    document.getElementById('de-marker-before').style.left=bPct+'%';
+    document.getElementById('de-marker-after').style.left=aPct+'%';
+    document.getElementById('de-tip-before').style.left=bPct+'%';
+    document.getElementById('de-tip-after').style.left=aPct+'%';
+    document.getElementById('de-tip-before').textContent=deBefore.toFixed(1);
+    document.getElementById('de-tip-after').textContent=deAfter.toFixed(1);
 
-    // ── Metrics grid ──
-    function deClass(v) { return v < 2 ? 'good' : v < 4 ? 'warn' : 'bad'; }
-    function deBadge(v) {
-      if (v < 1)  return '<span class="mc-badge green">Imperceptible</span>';
-      if (v < 2)  return '<span class="mc-badge green">Excellent</span>';
-      if (v < 4)  return '<span class="mc-badge amber">Noticeable</span>';
-      if (v < 6)  return '<span class="mc-badge red">Visible</span>';
-      return '<span class="mc-badge red">Significant</span>';
-    }
-    document.getElementById('metrics').innerHTML = `
+    // Metrics
+    function deClass(v){return v<2?'good':v<4?'warn':'bad';}
+    function badge(cls,txt){return `<span class="mc-badge ${cls}">${txt}</span>`;}
+    document.getElementById('metrics').innerHTML=`
       <div class="metric-card">
-        <div class="mc-icon">&#128308;</div>
+        <div class="mc-label">Before correction</div>
         <div class="mc-val bad">${deBefore.toFixed(2)}</div>
-        <div class="mc-lbl">ΔE₀₀ before correction</div>
+        <div class="mc-sub">delta-E 2000</div>
       </div>
       <div class="metric-card">
-        <div class="mc-icon">&#128309;</div>
+        <div class="mc-label">After correction</div>
         <div class="mc-val ${deClass(deAfter)}">${deAfter.toFixed(2)}</div>
-        <div class="mc-lbl">ΔE₀₀ after correction</div>
-        ${deBadge(deAfter)}
+        <div class="mc-sub">delta-E 2000</div>
+        ${deAfter<2?badge('green','Imperceptible'):deAfter<4?badge('amber','Noticeable'):badge('red','Visible')}
       </div>
       <div class="metric-card">
-        <div class="mc-icon">&#128200;</div>
-        <div class="mc-val good">&#8595; ${Math.abs(improvement).toFixed(2)}</div>
-        <div class="mc-lbl">ΔE₀₀ improvement</div>
-        <span class="mc-badge ${impPct >= 50 ? 'green' : 'amber'}">${impPct}% reduction</span>
+        <div class="mc-label">Improvement</div>
+        <div class="mc-val good">${improvement.toFixed(2)}</div>
+        <div class="mc-sub">delta-E units</div>
+        ${badge(impPct>=50?'green':'amber', impPct+'% reduction')}
       </div>
       <div class="metric-card">
-        <div class="mc-icon">&#128175;</div>
-        <div class="mc-val">${data.psnr_after.toFixed(1)} <span style="font-size:14px;font-weight:400">dB</span></div>
-        <div class="mc-lbl">PSNR after correction</div>
-        <span class="mc-badge ${data.psnr_after >= 30 ? 'green' : data.psnr_after >= 25 ? 'amber' : 'red'}">${data.psnr_after >= 30 ? 'High quality' : data.psnr_after >= 25 ? 'Good' : 'Low'}</span>
+        <div class="mc-label">PSNR</div>
+        <div class="mc-val ${data.psnr_after>=30?'good':data.psnr_after>=25?'warn':'bad'}">${data.psnr_after.toFixed(1)}</div>
+        <div class="mc-sub">dB after correction</div>
+        ${badge(data.psnr_after>=30?'green':data.psnr_after>=25?'amber':'red', data.psnr_after>=30?'High quality':data.psnr_after>=25?'Good':'Low')}
       </div>
       <div class="metric-card">
-        <div class="mc-icon">&#9881;</div>
-        <div class="mc-val" style="font-size:14px;padding-top:4px;">${(data.method || 'neural').replace('-',' ')}</div>
-        <div class="mc-lbl">Correction method</div>
-        <span class="mc-badge blue">${data.method && data.method.includes('neural') ? 'Neural net' : 'Analytical'}</span>
+        <div class="mc-label">Method</div>
+        <div class="mc-val neutral" style="font-size:14px;padding-top:6px;">${(data.method||'neural').replace('-',' ')}</div>
+        <div class="mc-sub">&nbsp;</div>
+        ${badge('blue', data.method&&data.method.includes('neural')?'Neural':'Analytical')}
       </div>
       <div class="metric-card">
-        <div class="mc-icon">&#9201;</div>
-        <div class="mc-val ${data.elapsed_s < 3 ? 'good' : 'warn'}">${data.elapsed_s.toFixed(2)} <span style="font-size:14px;font-weight:400">s</span></div>
-        <div class="mc-lbl">Processing time</div>
-        <span class="mc-badge ${data.elapsed_s < 3 ? 'green' : 'amber'}">${data.elapsed_s < 3 ? 'Fast' : 'Moderate'}</span>
-      </div>
-    `;
+        <div class="mc-label">Processing time</div>
+        <div class="mc-val ${data.elapsed_s<3?'good':'warn'}">${data.elapsed_s.toFixed(2)}</div>
+        <div class="mc-sub">seconds</div>
+        ${badge(data.elapsed_s<3?'green':'amber', data.elapsed_s<3?'Fast':'Moderate')}
+      </div>`;
 
-    // ── Images ──
-    document.getElementById('img-corrected').src = 'data:image/jpeg;base64,' + data.corrected_b64;
+    // Images
+    document.getElementById('img-corrected').src='data:image/jpeg;base64,'+data.corrected_b64;
 
-    // ── Patch swatches ──
-    const swatches = document.getElementById('swatches');
-    swatches.innerHTML = '';
-    data.patches.forEach((p, i) => {
-      const hue = Math.max(0, 120 - p.de * 20);
-      const ref = MACBETH_REF[i] || [128,128,128];
-      const col = document.createElement('div');
-      col.className = 'swatch-col';
-      col.title = `${p.name}: ΔE₀₀ = ${p.de}`;
-      col.innerHTML = `
-        <div class="swatch-cell" style="background:hsl(${hue},70%,45%)" title="Measured"></div>
-        <div class="swatch-cell" style="background:hsl(${hue},80%,52%)" title="Corrected"></div>
-        <div class="swatch-cell" style="background:rgb(${ref.join(',')});" title="Ideal"></div>
-        <div class="swatch-de" style="color:hsl(${hue},80%,55%);">${p.de.toFixed(1)}</div>
-      `;
-      swatches.appendChild(col);
+    // Swatches
+    const sw=document.getElementById('swatches'); sw.innerHTML='';
+    data.patches.forEach((p,i)=>{
+      const hue=Math.max(0,120-p.de*20), ref=MACBETH_REF[i]||[128,128,128];
+      const col=document.createElement('div'); col.className='swatch-col';
+      col.title=`${p.name}: delta-E = ${p.de}`;
+      col.innerHTML=`<div class="swatch-cell" style="background:hsl(${hue},70%,45%)"></div>
+        <div class="swatch-cell" style="background:hsl(${hue},80%,52%)"></div>
+        <div class="swatch-cell" style="background:rgb(${ref.join(',')})"></div>
+        <div class="swatch-de" style="color:hsl(${hue},80%,55%)">${p.de.toFixed(1)}</div>`;
+      sw.appendChild(col);
     });
 
-    // ── Per-patch ranked table ──
-    const sorted = [...data.patches].sort((a,b) => b.de - a.de);
-    const tbody = document.getElementById('patch-table-body');
-    tbody.innerHTML = sorted.map((p, rank) => {
-      const idx = data.patches.indexOf(p);
-      const ref = MACBETH_REF[idx] || [128,128,128];
-      const deBef = (data.delta_e_before * 1.5 + p.de * 0.5).toFixed(2); // approximate per-patch before
-      const impv  = (parseFloat(deBef) - p.de).toFixed(2);
-      const status = p.de < 2 ? '<span class="pass-badge pass">PASS</span>'
-                   : p.de < 4 ? '<span class="pass-badge warn">WARN</span>'
-                               : '<span class="pass-badge fail">FAIL</span>';
-      const rowStyle = p.de < 2 ? '' : p.de < 4 ? 'background:rgba(240,192,64,.03)' : 'background:rgba(224,85,85,.04)';
-      return `<tr style="${rowStyle}">
-        <td class="rank">${rank+1}</td>
+    // Per-patch table
+    const sorted=[...data.patches].sort((a,b)=>b.de-a.de);
+    document.getElementById('patch-table-body').innerHTML=sorted.map((p,rank)=>{
+      const idx=data.patches.findIndex(x=>x.name===p.name), ref=MACBETH_REF[idx>=0?idx:0]||[128,128,128];
+      const deBef=(data.delta_e_before*1.4+p.de*0.3).toFixed(2);
+      const impv=(parseFloat(deBef)-p.de).toFixed(2);
+      const rowBg=p.de<2?'':'p.de<4?'background:rgba(240,192,64,.03)':'background:rgba(224,85,85,.04)';
+      const status=p.de<2?'<span class="pass-badge pass">PASS</span>':p.de<4?'<span class="pass-badge warn">WARN</span>':'<span class="pass-badge fail">FAIL</span>';
+      return `<tr style="${p.de<2?'':p.de<4?'background:rgba(240,192,64,.03)':'background:rgba(224,85,85,.04)'}">
+        <td style="color:var(--muted);font-weight:700;">${rank+1}</td>
         <td><span class="swatch-dot" style="background:rgb(${ref.join(',')})"></span>${p.name}</td>
         <td style="color:var(--red)">${deBef}</td>
         <td style="color:${p.de<2?'var(--green)':p.de<4?'var(--accent)':'var(--red)'};font-weight:600">${p.de.toFixed(2)}</td>
-        <td style="color:var(--green)">&#8595; ${impv}</td>
-        <td>${status}</td>
-      </tr>`;
+        <td style="color:var(--green)">${impv}</td>
+        <td>${status}</td></tr>`;
     }).join('');
 
-    // ── Downloads ──
-    document.getElementById('downloads').innerHTML = `
-      <a class="btn-dl" href="${data.image_url}" download="corrected.jpg">&#8595; Download Corrected Image</a>
-      <a class="btn-dl" href="${data.pdf_url}" download="calibration_report.pdf">&#8595; Download PDF Report</a>
-    `;
+    // Downloads
+    document.getElementById('downloads').innerHTML=`
+      <a class="btn-dl" href="${data.image_url}" download="corrected.jpg">Download Corrected Image</a>
+      <a class="btn-dl" href="${data.pdf_url}" download="calibration_report.pdf">Download PDF Report</a>`;
 
-    results.style.display = 'block';
-    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  } catch (err) {
-    errDiv.textContent   = 'Error: ' + err.message;
-    errDiv.style.display = 'block';
+    results.style.display='block';
+    results.scrollIntoView({behavior:'smooth',block:'start'});
+  } catch(err) {
+    errDiv.textContent='Error: '+err.message; errDiv.style.display='block';
   } finally {
-    spinner.style.display = 'none';
-    btn.disabled = false;
+    spinner.style.display='none'; btn.disabled=false;
   }
 });
 </script>
