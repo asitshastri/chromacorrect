@@ -90,7 +90,7 @@ def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
     ideal     = MACBETH_SRGB.astype(np.float32) / 255.0
     meas_lin  = _srgb_to_linear(np.clip(measured_colors, 0.0, 1.0))
     ideal_lin = _srgb_to_linear(ideal)
-    lam = 0.05
+    lam = 0.10                                 # increased: less overcorrection
     I3  = np.eye(3, dtype=np.float32)
     ATA = meas_lin.T @ meas_lin + lam * I3
     ATB = meas_lin.T @ ideal_lin + lam * I3   # prior: M ≈ I (identity)
@@ -98,11 +98,29 @@ def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
     return M.astype(np.float32)   # (3, 3)
 
 
+_LUM_WEIGHTS = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+
+
 def _apply_linear_ccm(img: np.ndarray, M: np.ndarray) -> np.ndarray:
-    """Apply a linear-space 3×3 CCM to an sRGB float32 image (H,W,3)→(H,W,3)."""
+    """
+    Apply a linear-space 3×3 CCM to an sRGB float32 image (H,W,3)→(H,W,3).
+
+    After correction, the image is rescaled so its mean luminance matches the
+    original.  This strips out the exposure-shift component of the CCM (which
+    comes from the calibration card being shot in different lighting than
+    assumed by the Macbeth reference values) while keeping the colour-cast fix.
+    """
     H, W = img.shape[:2]
     lin  = _srgb_to_linear(img.reshape(-1, 3))
     corr = np.clip(lin @ M, 0.0, 1.0)
+
+    # Restore original mean luminance so the CCM only fixes colour cast,
+    # not overall exposure.
+    orig_lum = float((lin  @ _LUM_WEIGHTS).mean())
+    corr_lum = float((corr @ _LUM_WEIGHTS).mean())
+    if corr_lum > 1e-6 and orig_lum > 1e-6:
+        corr = np.clip(corr * (orig_lum / corr_lum), 0.0, 1.0)
+
     return _linear_to_srgb(corr).reshape(H, W, 3)
 
 
@@ -191,17 +209,24 @@ def _load_image_bytes(data: bytes, target_size: int = 256):
 
 def _apply_correction(img: np.ndarray, matrix: np.ndarray,
                       bias: np.ndarray = None) -> np.ndarray:
-    """Apply affine or polynomial colour correction to a full image (H,W,3)→(H,W,3)."""
+    """Apply affine or polynomial colour correction to a full image (H,W,3)→(H,W,3).
+    Luminance is rescaled back to original mean so the model only corrects colour cast."""
     H, W = img.shape[:2]
     flat = img.reshape(-1, 3)
     if _model_is_poly:
-        # matrix is (9,3): expand to 9 features then multiply
-        corrected = _poly_expand(flat) @ matrix   # (H*W, 9) @ (9, 3) = (H*W, 3)
+        corrected = _poly_expand(flat) @ matrix
     else:
-        corrected = flat @ matrix.T               # (H*W, 3) @ (3, 3) = (H*W, 3)
+        corrected = flat @ matrix.T
     if bias is not None:
         corrected = corrected + bias
-    return np.clip(corrected.reshape(H, W, 3), 0.0, 1.0).astype(np.float32)
+    corrected = np.clip(corrected, 0.0, 1.0).astype(np.float32)
+
+    orig_lum = float((flat   @ _LUM_WEIGHTS).mean())
+    corr_lum = float((corrected @ _LUM_WEIGHTS).mean())
+    if corr_lum > 1e-6 and orig_lum > 1e-6:
+        corrected = np.clip(corrected * (orig_lum / corr_lum), 0.0, 1.0)
+
+    return corrected.reshape(H, W, 3)
 
 
 def _compute_psnr(pred: np.ndarray, target: np.ndarray) -> float:
