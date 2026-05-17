@@ -408,15 +408,15 @@
 <main>
 
   <!-- Scene photo upload -->
-  <label class="drop-zone" id="dz-image">
-    <input type="file" id="inp-image" accept="image/*" />
+  <div class="drop-zone" id="dz-image">
+    <input type="file" id="inp-image" accept="image/*" style="display:none" />
     <div class="dz-icon-wrap">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
     </div>
     <div class="dz-title">Scene Photo</div>
     <div class="dz-hint">Include your Macbeth ColorChecker card in the shot &mdash; drag &amp; drop or click</div>
     <div class="fname" id="img-name"></div>
-  </label>
+  </div>
 
   <!-- Card corner marking -->
   <div id="card-section">
@@ -663,8 +663,12 @@ function setFile(which, file) {
     reader.readAsDataURL(file);
     imgNatural = new Image();
     imgNatural.onload = () => {
-      resetCorners(); renderCanvas(); cardSection.classList.add('visible');
-      window.scrollTo({top: cardSection.offsetTop - 20, behavior:'smooth'});
+      resetCorners();
+      cardSection.classList.add('visible'); // show BEFORE renderCanvas so layout is ready
+      requestAnimationFrame(() => {
+        renderCanvas();
+        window.scrollTo({top: cardSection.offsetTop - 20, behavior:'smooth'});
+      });
     };
     imgNatural.src = URL.createObjectURL(file);
   } else {
@@ -683,6 +687,8 @@ inpImage.addEventListener('change', e => e.target.files[0] && setFile('image', e
 inpColor.addEventListener('change', e => {
   if (e.target.files[0]) { isSrgbInput = false; confirmed = false; confirmStatus.style.display = 'none'; setFile('color', e.target.files[0]); }
 });
+// Click drop zone → open file picker
+dzImage.addEventListener('click', e => { if (e.target !== inpImage) inpImage.click(); });
 dzImage.addEventListener('dragover', e => { e.preventDefault(); dzImage.classList.add('over'); });
 dzImage.addEventListener('dragleave', () => dzImage.classList.remove('over'));
 dzImage.addEventListener('drop', e => {
@@ -705,7 +711,8 @@ function updateStepBadges() {
 }
 function renderCanvas() {
   if (!imgNatural) return;
-  const maxW = Math.min(900, canvas.parentElement.clientWidth - 32);
+  // Use window width — card-section may still be display:none when first called
+  const maxW = Math.min(900, window.innerWidth - 40);
   const scale = Math.min(1, maxW / imgNatural.naturalWidth);
   canvas.width  = Math.round(imgNatural.naturalWidth  * scale);
   canvas.height = Math.round(imgNatural.naturalHeight * scale);
