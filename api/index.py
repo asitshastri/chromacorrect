@@ -385,7 +385,7 @@ async def correct_image(
         de_after_mean  = de_after_mean,
         psnr_before    = psnr_before,
         psnr_after     = psnr_after,
-        model_version  = "V2" if _model_has_bias else "V1",
+        model_version  = "V3" if _model_is_v3 else ("V2" if _model_has_bias else "V1"),
     )
 
     # ── Save files to temp dir for download ──────────────────────────────────
@@ -435,6 +435,7 @@ async def correct_image(
         "psnr_after":     round(psnr_after,  2),
         "elapsed_s":      round(elapsed, 2),
         "method":         method_used,
+        "model_version":  "V3" if _model_is_v3 else ("V2" if _model_has_bias else "V1"),
         "patches":        patch_data,
     })
 
