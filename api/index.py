@@ -377,21 +377,28 @@ async def correct_image(
             model_colors = model_colors + bias
         model_colors = np.clip(model_colors, 0.0, 1.0).astype(np.float32)
 
-    # ── RBF correction: exact at 24 anchor patches, smooth elsewhere ─────────
+    # ── CCM + RBF: global correction then local residual fine-tuning ─────────
+    # Stage 1: full analytical CCM in linear space removes the bulk of the
+    # illuminant cast (warm→neutral). Residuals after CCM are small (~ΔE 1-3).
+    # Stage 2: RBF fits only those small residuals → no blue-tint overshoot.
     macbeth_f32 = MACBETH_SRGB.astype(np.float32) / 255.0
     ideal_lab   = rgb_to_lab(macbeth_f32)
 
-    rbf_W = _compute_rbf_weights(measured_colors, macbeth_f32)
+    meas_lin     = _srgb_to_linear(measured_colors)
+    ccm_meas_lin = np.clip(meas_lin @ analytical_M, 0.0, 1.0)  # analytical_b=0
+    ccm_measured = _linear_to_srgb(ccm_meas_lin)               # (24,3) after CCM
 
-    # Evaluate RBF at the 24 anchor points — near-exact by construction
-    diff_pp = measured_colors[:, None, :] - measured_colors[None, :, :]  # (24,24,3)
-    Phi_pp  = np.exp(-8.0 * (diff_pp ** 2).sum(axis=2))                  # (24,24)
-    corrected_colors = np.clip(
-        measured_colors + Phi_pp @ rbf_W, 0.0, 1.0
-    ).astype(np.float32)
-    method_used = "rbf"
+    rbf_W = _compute_rbf_weights(ccm_measured, macbeth_f32)
 
-    corrected_full = _apply_rbf(full_rgb, measured_colors, rbf_W, strength=1.0)
+    # Patch metrics: CCM + full RBF residuals → near-exact at all 24 anchors
+    diff_pp = ccm_measured[:, None, :] - ccm_measured[None, :, :]  # (24,24,3)
+    Phi_pp  = np.exp(-8.0 * (diff_pp ** 2).sum(axis=2))             # (24,24)
+    corrected_colors = np.clip(ccm_measured + Phi_pp @ rbf_W, 0.0, 1.0).astype(np.float32)
+    method_used = "ccm+rbf"
+
+    # Image: full CCM removes global cast, then light RBF refines residuals
+    corrected_full_ccm = _apply_linear_ccm(full_rgb, analytical_M, analytical_b, strength=1.0)
+    corrected_full = _apply_rbf(corrected_full_ccm, ccm_measured, rbf_W, strength=0.5)
 
     # ── LAB conversions ───────────────────────────────────────────────────────
     measured_lab  = rgb_to_lab(measured_colors)
