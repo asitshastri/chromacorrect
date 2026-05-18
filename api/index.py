@@ -80,23 +80,34 @@ _PATCH_NAMES = [
 ]
 
 
-def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
+def _compute_analytical_ccm(measured_colors: np.ndarray):
     """
-    Compute a regularized 3×3 CCM in linear-light space.
+    Compute an affine CCM (matrix M + bias b) in linear-light space.
 
-    Tikhonov regularization (lam=0.05) pulls the matrix toward identity,
-    preventing extreme off-diagonal values that shift dark/saturated pixels
-    wildly outside the gamut of the 24 calibration patches.
+    Fits [R G B 1] @ [M; b] = ideal_linear using Tikhonov regularization.
+    The bias term corrects additive offsets (e.g. systematic channel under/over-
+    response) that a pure 3×3 matrix cannot handle.
+    lam=0.01 allows the matrix to fit the data closely while staying stable.
+    Returns (M (3,3), b (3,)) both float32.
     """
     ideal     = MACBETH_SRGB.astype(np.float32) / 255.0
     meas_lin  = _srgb_to_linear(np.clip(measured_colors, 0.0, 1.0))
     ideal_lin = _srgb_to_linear(ideal)
-    lam = 0.10                                 # increased: less overcorrection
-    I3  = np.eye(3, dtype=np.float32)
-    ATA = meas_lin.T @ meas_lin + lam * I3
-    ATB = meas_lin.T @ ideal_lin + lam * I3   # prior: M ≈ I (identity)
-    M   = np.linalg.solve(ATA, ATB)
-    return M.astype(np.float32)   # (3, 3)
+
+    ones = np.ones((24, 1), dtype=np.float32)
+    A    = np.hstack([meas_lin, ones])          # (24, 4)
+
+    lam  = 0.01
+    # Regularise matrix toward identity, bias toward zero
+    reg  = np.diag([lam, lam, lam, 0.0]).astype(np.float32)   # (4,4)
+    ATA  = A.T @ A + reg
+    # Prior: M ≈ I
+    prior      = np.zeros((4, 3), dtype=np.float32)
+    prior[:3]  = np.eye(3, dtype=np.float32) * lam
+    ATB  = A.T @ ideal_lin + prior
+
+    params = np.linalg.solve(ATA, ATB)          # (4, 3)
+    return params[:3].astype(np.float32), params[3].astype(np.float32)  # M, b
 
 
 _LUM_WEIGHTS  = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
@@ -117,22 +128,25 @@ def _neutral_normalize(measured: np.ndarray, ideal: np.ndarray):
     return np.clip(measured * scale, 0.0, 1.0).astype(np.float32), scale.astype(np.float32)
 
 
-def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, strength: float = 0.5) -> np.ndarray:
+def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, b: np.ndarray = None,
+                      strength: float = 0.7) -> np.ndarray:
     """
-    Apply a linear-space 3×3 CCM to an sRGB float32 image (H,W,3)→(H,W,3).
+    Apply affine CCM (M + optional bias b) to an sRGB float32 image (H,W,3).
 
-    `strength` blends M with identity (0=no change, 1=full CCM).  Default 0.5
-    avoids overcorrection when the calibration card was shot under different
-    illumination than the Macbeth D50 reference values assume.
+    `strength` blends toward identity (0=no change, 1=full correction).
+    Default 0.7 applies most of the correction while limiting artefacts on
+    pixels outside the calibration patch gamut.
     """
     H, W = img.shape[:2]
-    I3   = np.eye(3, dtype=np.float32)
+    I3     = np.eye(3, dtype=np.float32)
     M_soft = strength * M + (1.0 - strength) * I3
-    lin  = _srgb_to_linear(img.reshape(-1, 3))
-    corr = np.clip(lin @ M_soft, 0.0, 1.0)
+    lin    = _srgb_to_linear(img.reshape(-1, 3))
+    corr   = lin @ M_soft
+    if b is not None:
+        corr = corr + b * strength
+    corr = np.clip(corr, 0.0, 1.0)
 
-    # Restore original mean luminance so the CCM only fixes colour cast,
-    # not overall exposure.
+    # Restore original mean luminance so the CCM only fixes colour cast.
     orig_lum = float((lin  @ _LUM_WEIGHTS).mean())
     corr_lum = float((corr @ _LUM_WEIGHTS).mean())
     if corr_lum > 1e-6 and orig_lum > 1e-6:
@@ -304,28 +318,15 @@ async def correct_image(
     except Exception as e:
         raise HTTPException(400, f"Failed to load image: {e}")
 
-    # ── Neutral-patch pre-normalization (exposure + white balance) ───────────────
-    # Scales measured colors so neutral gray patches match reference luminance.
-    # Compensates for D65 outdoor illuminant vs D50 reference before model runs.
-    _macbeth_f32_early = MACBETH_SRGB.astype(np.float32) / 255.0
-    measured_colors, _wb_scale = _neutral_normalize(measured_colors, _macbeth_f32_early)
-    full_rgb = np.clip(full_rgb * _wb_scale, 0.0, 1.0)
-
-    # Rebuild model image input with WB-corrected image
-    from PIL import Image as _PIL
-    _pil_wb = _PIL.fromarray((full_rgb * 255).clip(0, 255).astype(np.uint8))
-    _pil_small = _pil_wb.resize((256, 256), _PIL.BILINEAR)
-    img_input = (np.array(_pil_small, dtype=np.float32) / 255.0).transpose(2, 0, 1)[np.newaxis, ...]
-
     # ── Build patch tiles for ONNX ────────────────────────────────────────────
     patches_np = _colors_to_patches(measured_colors, size=64)  # (24, 3, 64, 64)
     patches_input = patches_np[np.newaxis, ...]                # (1, 24, 3, 64, 64)
 
-    # ── Analytical CCM (always computed — optimal least-squares solution) ────────
-    analytical_M = _compute_analytical_ccm(measured_colors)   # (3, 3)
-    meas_lin     = _srgb_to_linear(measured_colors)           # (24, 3)
-    corr_lin_patches = np.clip(meas_lin @ analytical_M, 0.0, 1.0)
-    analytical_colors = _linear_to_srgb(corr_lin_patches)    # (24, 3) sRGB
+    # ── Analytical affine CCM (always computed — optimal least-squares solution) ─
+    analytical_M, analytical_b = _compute_analytical_ccm(measured_colors)   # (3,3), (3,)
+    meas_lin     = _srgb_to_linear(measured_colors)                          # (24, 3)
+    corr_lin_patches = np.clip(meas_lin @ analytical_M + analytical_b, 0.0, 1.0)
+    analytical_colors = _linear_to_srgb(corr_lin_patches)                   # (24, 3) sRGB
 
     # ── Run ONNX model ────────────────────────────────────────────────────────
     sess = _get_session()
@@ -367,7 +368,7 @@ async def correct_image(
 
     if de_analytical <= de_model:
         corrected_colors = analytical_colors
-        corrected_full   = _apply_linear_ccm(full_rgb, analytical_M)
+        corrected_full   = _apply_linear_ccm(full_rgb, analytical_M, analytical_b)
         method_used      = "analytical-ccm"
     else:
         corrected_colors = model_colors
