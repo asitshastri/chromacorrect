@@ -250,6 +250,46 @@ def _apply_correction(img: np.ndarray, matrix: np.ndarray,
     return corrected.reshape(H, W, 3)
 
 
+def _compute_rbf_weights(measured: np.ndarray, ideal: np.ndarray,
+                         epsilon: float = 8.0) -> np.ndarray:
+    """RBF weights W (24,3): kernel(measured_i,measured_j) @ W = ideal-measured."""
+    diff = measured[:, None, :] - measured[None, :, :]   # (24,24,3)
+    Phi  = np.exp(-epsilon * (diff**2).sum(axis=2))      # (24,24)
+    W    = np.linalg.solve(Phi + 1e-5 * np.eye(24), ideal - measured)
+    return W.astype(np.float32)
+
+
+def _apply_rbf(img: np.ndarray, measured: np.ndarray, W: np.ndarray,
+               epsilon: float = 8.0, strength: float = 0.85) -> np.ndarray:
+    """Apply RBF colour correction to full image. Exact at 24 anchor patches."""
+    H, W_img = img.shape[:2]
+    pixels = img.reshape(-1, 3)
+    diff   = pixels[:, None, :] - measured[None, :, :]   # (N,24,3)
+    Phi    = np.exp(-epsilon * (diff**2).sum(axis=2))     # (N,24)
+    delta  = Phi @ W                                      # (N,3)
+    return np.clip(pixels + delta * strength, 0.0, 1.0).reshape(H, W_img, 3)
+
+
+def _rpr_features(c: np.ndarray) -> np.ndarray:
+    """Expand (N,3) sRGB → (N,7) root-polynomial features."""
+    eps = 1e-8
+    return np.column_stack([
+        c,
+        np.sqrt(np.maximum(c[:, 0] * c[:, 1], eps)),
+        np.sqrt(np.maximum(c[:, 0] * c[:, 2], eps)),
+        np.sqrt(np.maximum(c[:, 1] * c[:, 2], eps)),
+        np.sqrt(np.maximum((c**2).sum(axis=1), eps)),
+    ])
+
+
+def _compute_rpr(measured: np.ndarray, ideal: np.ndarray,
+                 lam: float = 0.01) -> np.ndarray:
+    """Root Polynomial Regression: fit (24,7) features → (24,3) ideal. Returns W (7,3)."""
+    F   = _rpr_features(measured)
+    ATA = F.T @ F + lam * np.eye(7, dtype=np.float32)
+    return np.linalg.solve(ATA, F.T @ ideal).astype(np.float32)
+
+
 def _compute_psnr(pred: np.ndarray, target: np.ndarray) -> float:
     mse = ((pred - target) ** 2).mean()
     if mse < 1e-10:
@@ -341,17 +381,28 @@ async def correct_image(
     macbeth_f32 = MACBETH_SRGB.astype(np.float32) / 255.0
     ideal_lab   = rgb_to_lab(macbeth_f32)
 
+    # RPR: nonlinear 7-feature regression — better for cameras with nonlinear response
+    rpr_W      = _compute_rpr(measured_colors, macbeth_f32)
+    rpr_colors = np.clip(_rpr_features(measured_colors) @ rpr_W, 0.0, 1.0).astype(np.float32)
+
     de_analytical = float(delta_e_2000(rgb_to_lab(analytical_colors), ideal_lab).mean())
     de_model      = float(delta_e_2000(rgb_to_lab(model_colors),      ideal_lab).mean())
+    de_rpr        = float(delta_e_2000(rgb_to_lab(rpr_colors),        ideal_lab).mean())
 
-    if de_analytical <= de_model:
+    best_de = min(de_analytical, de_model, de_rpr)
+    if de_rpr <= best_de:
+        corrected_colors = rpr_colors
+        method_used      = "rpr"
+    elif de_analytical <= de_model:
         corrected_colors = analytical_colors
-        corrected_full   = _apply_linear_ccm(full_rgb, analytical_M, analytical_b)
         method_used      = "analytical-ccm"
     else:
         corrected_colors = model_colors
-        corrected_full   = _apply_correction(full_rgb, matrix, bias)
         method_used      = "neural-network"
+
+    # RBF image correction: exact at 24 anchor patches, smooth interpolation elsewhere
+    rbf_W         = _compute_rbf_weights(measured_colors, macbeth_f32)
+    corrected_full = _apply_rbf(full_rgb, measured_colors, rbf_W)
 
     # ── LAB conversions ───────────────────────────────────────────────────────
     measured_lab  = rgb_to_lab(measured_colors)

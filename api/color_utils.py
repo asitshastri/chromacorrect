@@ -107,7 +107,15 @@ def parse_srgb_txt(content: str) -> np.ndarray:
     for line in lines[:24]:
         parts = line.split()
         vals.append([float(parts[0]), float(parts[1]), float(parts[2])])
-    return np.clip(np.array(vals, dtype=np.float32) / 255.0, 0.0, 1.0)
+    colors = np.clip(np.array(vals, dtype=np.float32) / 255.0, 0.0, 1.0)
+
+    # Match training pipeline: raw→linear→global-max normalize→gamma.
+    # Browser pixels are already gamma-encoded; undo gamma, normalize, redo.
+    linear = np.power(np.maximum(colors, 1e-8), 2.2)
+    gmax   = float(linear.max())
+    if gmax > 1e-8:
+        linear = linear / gmax
+    return np.power(np.clip(linear, 1e-8, 1.0), 1.0 / 2.2).astype(np.float32)
 
 
 # ── Colour space conversion ───────────────────────────────────────────────────
