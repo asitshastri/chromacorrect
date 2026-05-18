@@ -48,9 +48,10 @@ from watermark import stamp_certification
 
 # ── ONNX model session (loaded once at startup) ───────────────────────────────
 _MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.onnx")
-_ort_session = None
+_ort_session    = None
 _model_has_bias = False   # True for V2 (matrix + bias), False for V1 (matrix only)
 _model_is_poly  = False   # True when matrix is (9,3) polynomial, False for (3,3) affine
+_model_is_v3    = False   # True for V3 (global_matrix + global_bias + delta_matrix + delta_bias)
 
 
 def _poly_expand(colors: np.ndarray) -> np.ndarray:
@@ -126,7 +127,7 @@ def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, strength: float = 0.5) -> 
 
 
 def _get_session():
-    global _ort_session, _model_has_bias, _model_is_poly
+    global _ort_session, _model_has_bias, _model_is_poly, _model_is_v3
     if _ort_session is None:
         import onnxruntime as ort
         _ort_session = ort.InferenceSession(
@@ -134,11 +135,15 @@ def _get_session():
         )
         output_names = [o.name for o in _ort_session.get_outputs()]
         _model_has_bias = "bias" in output_names
+        _model_is_v3   = "global_matrix" in output_names   # V3 uses named outputs
         # Detect poly: run a dummy pass and check matrix output shape
         dummy_p = np.zeros((1, 24, 3, 64, 64), dtype=np.float32)
         dummy_i = np.zeros((1, 3, 256, 256),   dtype=np.float32)
         dummy_out = _ort_session.run(None, {"patches": dummy_p, "image": dummy_i})
-        _model_is_poly = dummy_out[0].shape[1] == 9   # (1,9,3) → poly, (1,3,3) → affine
+        if _model_is_v3:
+            _model_is_poly = dummy_out[0].shape[-1] == 9   # global_matrix (1,9,3) → poly
+        else:
+            _model_is_poly = dummy_out[0].shape[1] == 9   # (1,9,3) → poly, (1,3,3) → affine
     return _ort_session
 
 
@@ -301,16 +306,29 @@ async def correct_image(
     except Exception as e:
         raise HTTPException(500, f"Model inference failed: {e}")
 
-    matrix = outputs[0][0]   # (3, 3) or (9, 3)
-    bias   = outputs[1][0] if _model_has_bias and len(outputs) > 1 else None
-
-    if _model_is_poly:
-        model_colors = _poly_expand(measured_colors) @ matrix
+    if _model_is_v3:
+        # V3: per-patch correction — each patch gets global + its own residual
+        global_M  = outputs[0][0]   # (3,3)
+        global_b  = outputs[1][0]   # (3,)
+        delta_M   = outputs[2][0]   # (24,3,3)
+        delta_b   = outputs[3][0]   # (24,3)
+        model_colors = np.zeros((24, 3), dtype=np.float32)
+        for i in range(24):
+            Mi = global_M + delta_M[i]          # (3,3)
+            bi = global_b + delta_b[i]           # (3,)
+            model_colors[i] = np.clip(measured_colors[i] @ Mi.T + bi, 0.0, 1.0)
+        matrix = global_M   # kept for _apply_correction fallback
+        bias   = global_b
     else:
-        model_colors = measured_colors @ matrix.T
-    if bias is not None:
-        model_colors = model_colors + bias
-    model_colors = np.clip(model_colors, 0.0, 1.0).astype(np.float32)
+        matrix = outputs[0][0]   # (3, 3) or (9, 3)
+        bias   = outputs[1][0] if _model_has_bias and len(outputs) > 1 else None
+        if _model_is_poly:
+            model_colors = _poly_expand(measured_colors) @ matrix
+        else:
+            model_colors = measured_colors @ matrix.T
+        if bias is not None:
+            model_colors = model_colors + bias
+        model_colors = np.clip(model_colors, 0.0, 1.0).astype(np.float32)
 
     # ── Pick whichever method gives lower dE2000 on the 24 patches ────────────
     macbeth_f32 = MACBETH_SRGB.astype(np.float32) / 255.0
