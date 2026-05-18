@@ -377,32 +377,21 @@ async def correct_image(
             model_colors = model_colors + bias
         model_colors = np.clip(model_colors, 0.0, 1.0).astype(np.float32)
 
-    # ── Pick whichever method gives lower dE2000 on the 24 patches ────────────
+    # ── RBF correction: exact at 24 anchor patches, smooth elsewhere ─────────
     macbeth_f32 = MACBETH_SRGB.astype(np.float32) / 255.0
     ideal_lab   = rgb_to_lab(macbeth_f32)
 
-    # RPR: nonlinear 7-feature regression — better for cameras with nonlinear response
-    rpr_W      = _compute_rpr(measured_colors, macbeth_f32)
-    rpr_colors = np.clip(_rpr_features(measured_colors) @ rpr_W, 0.0, 1.0).astype(np.float32)
+    rbf_W = _compute_rbf_weights(measured_colors, macbeth_f32)
 
-    de_analytical = float(delta_e_2000(rgb_to_lab(analytical_colors), ideal_lab).mean())
-    de_model      = float(delta_e_2000(rgb_to_lab(model_colors),      ideal_lab).mean())
-    de_rpr        = float(delta_e_2000(rgb_to_lab(rpr_colors),        ideal_lab).mean())
+    # Evaluate RBF at the 24 anchor points — near-exact by construction
+    diff_pp = measured_colors[:, None, :] - measured_colors[None, :, :]  # (24,24,3)
+    Phi_pp  = np.exp(-8.0 * (diff_pp ** 2).sum(axis=2))                  # (24,24)
+    corrected_colors = np.clip(
+        measured_colors + Phi_pp @ rbf_W, 0.0, 1.0
+    ).astype(np.float32)
+    method_used = "rbf"
 
-    best_de = min(de_analytical, de_model, de_rpr)
-    if de_rpr <= best_de:
-        corrected_colors = rpr_colors
-        method_used      = "rpr"
-    elif de_analytical <= de_model:
-        corrected_colors = analytical_colors
-        method_used      = "analytical-ccm"
-    else:
-        corrected_colors = model_colors
-        method_used      = "neural-network"
-
-    # RBF image correction: exact at 24 anchor patches, smooth interpolation elsewhere
-    rbf_W         = _compute_rbf_weights(measured_colors, macbeth_f32)
-    corrected_full = _apply_rbf(full_rgb, measured_colors, rbf_W)
+    corrected_full = _apply_rbf(full_rgb, measured_colors, rbf_W, strength=1.0)
 
     # ── LAB conversions ───────────────────────────────────────────────────────
     measured_lab  = rgb_to_lab(measured_colors)
