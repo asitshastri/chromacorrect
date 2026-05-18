@@ -82,32 +82,22 @@ _PATCH_NAMES = [
 
 def _compute_analytical_ccm(measured_colors: np.ndarray):
     """
-    Compute an affine CCM (matrix M + bias b) in linear-light space.
+    Compute a 3×3 CCM in linear-light space with light Tikhonov regularization.
 
-    Fits [R G B 1] @ [M; b] = ideal_linear using Tikhonov regularization.
-    The bias term corrects additive offsets (e.g. systematic channel under/over-
-    response) that a pure 3×3 matrix cannot handle.
-    lam=0.01 allows the matrix to fit the data closely while staying stable.
-    Returns (M (3,3), b (3,)) both float32.
+    Pure multiplicative (no bias): maps (0,0,0)→(0,0,0) so dark patches
+    cannot be pushed below zero by an additive offset.  lam=0.01 lets the
+    matrix fit the 24 training patches closely while remaining stable.
+    Returns (M (3,3), b (3,)) where b is always zeros.
     """
     ideal     = MACBETH_SRGB.astype(np.float32) / 255.0
     meas_lin  = _srgb_to_linear(np.clip(measured_colors, 0.0, 1.0))
     ideal_lin = _srgb_to_linear(ideal)
-
-    ones = np.ones((24, 1), dtype=np.float32)
-    A    = np.hstack([meas_lin, ones])          # (24, 4)
-
-    lam  = 0.01
-    # Regularise matrix toward identity, bias toward zero
-    reg  = np.diag([lam, lam, lam, 0.0]).astype(np.float32)   # (4,4)
-    ATA  = A.T @ A + reg
-    # Prior: M ≈ I
-    prior      = np.zeros((4, 3), dtype=np.float32)
-    prior[:3]  = np.eye(3, dtype=np.float32) * lam
-    ATB  = A.T @ ideal_lin + prior
-
-    params = np.linalg.solve(ATA, ATB)          # (4, 3)
-    return params[:3].astype(np.float32), params[3].astype(np.float32)  # M, b
+    lam = 0.01
+    I3  = np.eye(3, dtype=np.float32)
+    ATA = meas_lin.T @ meas_lin + lam * I3
+    ATB = meas_lin.T @ ideal_lin + lam * I3   # prior: M ≈ I
+    M   = np.linalg.solve(ATA, ATB)
+    return M.astype(np.float32), np.zeros(3, dtype=np.float32)  # M, b=0
 
 
 _LUM_WEIGHTS  = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
@@ -131,11 +121,12 @@ def _neutral_normalize(measured: np.ndarray, ideal: np.ndarray):
 def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, b: np.ndarray = None,
                       strength: float = 0.7) -> np.ndarray:
     """
-    Apply affine CCM (M + optional bias b) to an sRGB float32 image (H,W,3).
+    Apply a 3×3 CCM (+ optional bias b) to an sRGB float32 image (H,W,3).
 
     `strength` blends toward identity (0=no change, 1=full correction).
     Default 0.7 applies most of the correction while limiting artefacts on
-    pixels outside the calibration patch gamut.
+    pixels outside the calibration patch gamut.  Luminance is NOT preserved
+    so the CCM can correct both colour cast and exposure simultaneously.
     """
     H, W = img.shape[:2]
     I3     = np.eye(3, dtype=np.float32)
@@ -144,15 +135,7 @@ def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, b: np.ndarray = None,
     corr   = lin @ M_soft
     if b is not None:
         corr = corr + b * strength
-    corr = np.clip(corr, 0.0, 1.0)
-
-    # Restore original mean luminance so the CCM only fixes colour cast.
-    orig_lum = float((lin  @ _LUM_WEIGHTS).mean())
-    corr_lum = float((corr @ _LUM_WEIGHTS).mean())
-    if corr_lum > 1e-6 and orig_lum > 1e-6:
-        corr = np.clip(corr * (orig_lum / corr_lum), 0.0, 1.0)
-
-    return _linear_to_srgb(corr).reshape(H, W, 3)
+    return _linear_to_srgb(np.clip(corr, 0.0, 1.0)).reshape(H, W, 3)
 
 
 def _get_session():
@@ -263,11 +246,6 @@ def _apply_correction(img: np.ndarray, matrix: np.ndarray,
         if bias is not None:
             corrected = corrected + bias * strength
         corrected = np.clip(corrected, 0.0, 1.0).astype(np.float32)
-
-    orig_lum = float((flat      @ _LUM_WEIGHTS).mean())
-    corr_lum = float((corrected @ _LUM_WEIGHTS).mean())
-    if corr_lum > 1e-6 and orig_lum > 1e-6:
-        corrected = np.clip(corrected * (orig_lum / corr_lum), 0.0, 1.0)
 
     return corrected.reshape(H, W, 3)
 
