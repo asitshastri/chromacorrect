@@ -99,7 +99,22 @@ def _compute_analytical_ccm(measured_colors: np.ndarray) -> np.ndarray:
     return M.astype(np.float32)   # (3, 3)
 
 
-_LUM_WEIGHTS = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+_LUM_WEIGHTS  = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+# Neutral patches (0-indexed): White 9.5 → Neutral 3.5 (skip Black — too dark for WB)
+_NEUTRAL_IDX  = list(range(18, 23))
+
+
+def _neutral_normalize(measured: np.ndarray, ideal: np.ndarray):
+    """Scale measured colors so neutral patches match ideal exposure/white-balance.
+
+    Uses the 5 neutral gray patches (rows 19-23) to compute a per-channel scale
+    that compensates for illuminant and exposure differences before the model runs.
+    Returns (normalized_measured (24,3), scale_rgb (3,)).
+    """
+    m_neu = measured[_NEUTRAL_IDX].mean(axis=0)   # (3,) mean measured neutral
+    i_neu = ideal[_NEUTRAL_IDX].mean(axis=0)       # (3,) mean ideal neutral
+    scale = np.clip(i_neu / np.maximum(m_neu, 1e-4), 0.2, 5.0)
+    return np.clip(measured * scale, 0.0, 1.0).astype(np.float32), scale.astype(np.float32)
 
 
 def _apply_linear_ccm(img: np.ndarray, M: np.ndarray, strength: float = 0.5) -> np.ndarray:
@@ -288,6 +303,19 @@ async def correct_image(
         full_rgb, img_input = _load_image_bytes(img_bytes, target_size=256)
     except Exception as e:
         raise HTTPException(400, f"Failed to load image: {e}")
+
+    # ── Neutral-patch pre-normalization (exposure + white balance) ───────────────
+    # Scales measured colors so neutral gray patches match reference luminance.
+    # Compensates for D65 outdoor illuminant vs D50 reference before model runs.
+    _macbeth_f32_early = MACBETH_SRGB.astype(np.float32) / 255.0
+    measured_colors, _wb_scale = _neutral_normalize(measured_colors, _macbeth_f32_early)
+    full_rgb = np.clip(full_rgb * _wb_scale, 0.0, 1.0)
+
+    # Rebuild model image input with WB-corrected image
+    from PIL import Image as _PIL
+    _pil_wb = _PIL.fromarray((full_rgb * 255).clip(0, 255).astype(np.uint8))
+    _pil_small = _pil_wb.resize((256, 256), _PIL.BILINEAR)
+    img_input = (np.array(_pil_small, dtype=np.float32) / 255.0).transpose(2, 0, 1)[np.newaxis, ...]
 
     # ── Build patch tiles for ONNX ────────────────────────────────────────────
     patches_np = _colors_to_patches(measured_colors, size=64)  # (24, 3, 64, 64)
