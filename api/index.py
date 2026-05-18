@@ -396,9 +396,11 @@ async def correct_image(
     corrected_colors = np.clip(ccm_measured + Phi_pp @ rbf_W, 0.0, 1.0).astype(np.float32)
     method_used = "ccm+rbf"
 
-    # Image: full CCM removes global cast, then light RBF refines residuals
-    corrected_full_ccm = _apply_linear_ccm(full_rgb, analytical_M, analytical_b, strength=1.0)
-    corrected_full = _apply_rbf(corrected_full_ccm, ccm_measured, rbf_W, strength=0.5)
+    # Image: gentle CCM only (strength=0.5). Full-strength CCM at S=1.0 causes
+    # extreme luminance shifts (e.g. sky L*77→50) that make the image look
+    # animated. Patch metrics use the exact CCM+RBF path above; image uses a
+    # lighter touch that removes the visible cast without distorting scene tones.
+    corrected_full = _apply_linear_ccm(full_rgb, analytical_M, analytical_b, strength=0.5)
 
     # ── LAB conversions ───────────────────────────────────────────────────────
     measured_lab  = rgb_to_lab(measured_colors)
