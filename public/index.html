@@ -821,19 +821,50 @@ function computeGrade(de) {
   return              {grade:'F', cls:'grade-F', main:'Significant',      sub:'delta-E above 6.0'};
 }
 
+// ── Compress image to stay under Vercel's 4.5 MB body limit ──
+function compressImage(file, maxPx=3000, maxBytes=4000000, quality=0.88) {
+  return new Promise((resolve) => {
+    // Skip compression if already small enough
+    if (file.size <= maxBytes) { resolve(file); return; }
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxPx || h > maxPx) {
+        const scale = maxPx / Math.max(w, h);
+        w = Math.round(w * scale); h = Math.round(h * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'),
+                         { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 // ── Calibrate ──
 btn.addEventListener('click', async () => {
   btn.disabled=true; spinner.style.display='block';
   results.style.display='none'; errDiv.style.display='none';
+  const imageToUpload = await compressImage(fileImage);
   const form=new FormData();
-  form.append('image',         fileImage);
+  form.append('image',         imageToUpload);
   form.append('color_txt',     fileColor);
   form.append('dark_level',    document.getElementById('dark-level').value);
   form.append('sat_level',     document.getElementById('sat-level').value);
   form.append('is_srgb_input', isSrgbInput ? 'true' : 'false');
   try {
     const resp=await fetch('/api/correct',{method:'POST',body:form});
-    const data=await resp.json();
+    // Read as text first — avoids "not valid JSON" crash when server returns plain error
+    const rawText = await resp.text();
+    if (resp.status === 413 || rawText.startsWith('Request Entity'))
+      throw new Error('Image too large. Try a photo under 8 MP or use a compressed JPEG.');
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch(_) { throw new Error(`Server error ${resp.status}: ${rawText.slice(0,150)}`); }
     if (!resp.ok) throw new Error(data.detail||'Server error');
 
     const deBefore=data.delta_e_before, deAfter=data.delta_e_after;
