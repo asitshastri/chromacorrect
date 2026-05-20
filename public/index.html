@@ -925,12 +925,6 @@ btn.addEventListener('click', async () => {
         ${badge(data.psnr_after>=30?'green':data.psnr_after>=25?'amber':'red', data.psnr_after>=30?'High quality':data.psnr_after>=25?'Good':'Low')}
       </div>
       <div class="metric-card">
-        <div class="mc-label">Method</div>
-        <div class="mc-val neutral" style="font-size:14px;padding-top:6px;">${(data.method||'neural').replace('-',' ')}</div>
-        <div class="mc-sub">&nbsp;</div>
-        ${badge('blue', data.method&&data.method.includes('neural')?'Neural':'Analytical')}
-      </div>
-      <div class="metric-card">
         <div class="mc-label">Processing time</div>
         <div class="mc-val ${data.elapsed_s<3?'good':'warn'}">${data.elapsed_s.toFixed(2)}</div>
         <div class="mc-sub">seconds</div>
